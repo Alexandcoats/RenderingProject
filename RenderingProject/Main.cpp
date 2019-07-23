@@ -1,18 +1,23 @@
 #pragma once
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <chrono>
 #include <iostream>
 #include "Map.hpp"
+#include "Pipeline.hpp"
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
 	GLFWwindow* window;
 	Map map;
+	Pipeline* pipeline;
 
 public:
 	void run() {
 		map.initMap("./textures/pieces2.png");
 		map.saveMap("./textures/output.png");
+		initWindow();
+		mainLoop();
 	}
 
 	void mainLoop() {
@@ -30,17 +35,31 @@ public:
 
 		// Cleanup
 
-		glfwDestroyWindow(window);
+		//glfwDestroyWindow(window);
+		glfwTerminate();
 	}
 
 	void initWindow() {
-		glfwInit();
+		if(!glfwInit()) throw std::runtime_error("Failed to initialize GLFW");
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
 		window = glfwCreateWindow(INIT_WIDTH, INIT_HEIGHT, "Rendering Lunch and Learn", nullptr, nullptr);
 
+		if (!window) {
+			glfwTerminate();
+			throw std::runtime_error("Failed to create GLFW window");
+		}
+
 		glfwSetWindowUserPointer(window, this);
 		glfwSetWindowSizeCallback(window, onWindowResized);
+	}
+
+	void initPipeline() {
+		Shader VertShader{ "./shaders/basic_shader.vert", GL_VERTEX_SHADER };
+		Shader FragShader{ "./shaders/basic_shader.frag", GL_FRAGMENT_SHADER };
+
+		pipeline = new Pipeline{&VertShader, &FragShader};
+		pipeline->use();
 	}
 
 	void initInput() {
@@ -51,10 +70,14 @@ public:
 		if (width == 0 || height == 0) return;
 
 		Application * app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+
+		// Do anything needed when window resizes
 	}
 
 	static void handleKeyInput(GLFWwindow* window, int key, int scancode, int action, int mods) {
 		Application * app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+
+		// Do anything needed when there is keyboard input
 	}
 };
 
