@@ -21,7 +21,7 @@ public:
 
 	Pipeline();
 
-	explicit Pipeline(Geometry geometry, const std::initializer_list<const Shader*> shaders);
+	explicit Pipeline(const std::initializer_list<const Shader*> shaders);
 
 	// Disable copying of Pipelines
 	Pipeline(const Pipeline &) = delete;
@@ -35,6 +35,8 @@ public:
 	void use() { glUseProgram(ID); };
 
 	void attachShader(const Shader * shader);
+
+	void setMacro(VertexArrayMacro * macro);
 
 	void bindIndices(std::vector<uint16_t> indices);
 

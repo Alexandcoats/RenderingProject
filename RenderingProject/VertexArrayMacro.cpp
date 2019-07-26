@@ -1,43 +1,35 @@
 #include "VertexArrayMacro.hpp"
 
 VertexArrayMacro::VertexArrayMacro() {
-
-}
-
-VertexArrayMacro::VertexArrayMacro(int posLocation, int texCoordLocation, std::vector<Vertex> vertices)
-{
-	startRecording();
-	bindVertices(posLocation, texCoordLocation, vertices);
-	stopRecording();
+	glGenVertexArrays(1, &ID);
 }
 
 void VertexArrayMacro::bind() {
 	glBindVertexArray(ID);
 }
 
-void VertexArrayMacro::startRecording() {
-	glGenVertexArrays(1, &ID);
-	bind();
+void VertexArrayMacro::createBuffer(const char * name, GLsizeiptr size, const void * data) {
+	unsigned int bufID;
+	glGenBuffers(1, &bufID);
+	glBindBuffer(GL_ARRAY_BUFFER, bufID);
+	glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+	bufferIDs[name] = bufID;
 }
 
-void VertexArrayMacro::bindVertices(unsigned int posLocation, unsigned int texCoordLocation, std::vector<Vertex> vertices) {
-	glGenBuffers(1, &vertexBufID);
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufID);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), &vertices[0], GL_STATIC_DRAW);
+void VertexArrayMacro::bindVertexAttribute(const char * name, unsigned int location, int size, int stride, const void * offset) {
+	glBindBuffer(GL_ARRAY_BUFFER, bufferIDs[name]);
 
-	glVertexAttribPointer(posLocation, 3, GL_FLOAT, GL_FALSE, 2, (void*)0);
-	glEnableVertexAttribArray(posLocation);
-
-	glVertexAttribPointer(texCoordLocation, 3, GL_FLOAT, GL_FALSE, 3, (void*)3);
-	glEnableVertexAttribArray(texCoordLocation);
+	glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride, offset);
+	glEnableVertexAttribArray(location);
 }
 
-void VertexArrayMacro::stopRecording() {
+void VertexArrayMacro::unbind() {
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 }
 
 VertexArrayMacro::~VertexArrayMacro()
 {
-	glDeleteBuffers(1, &vertexBufID);
+	for(auto pair : bufferIDs) glDeleteBuffers(1, &pair.second);
 	glDeleteVertexArrays(1, &ID);
 }

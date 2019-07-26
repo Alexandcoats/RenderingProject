@@ -90,8 +90,20 @@ public:
 		Shader VertShader{ "./shaders/basic_shader.vert", GL_VERTEX_SHADER };
 		Shader FragShader{ "./shaders/basic_shader.frag", GL_FRAGMENT_SHADER };
 
-		pipeline = new Pipeline{ Geometry(), {&VertShader, &FragShader} };
+		Geometry geometry{};
+
+		pipeline = new Pipeline{ &VertShader, &FragShader };
 		pipeline->use();
+		pipeline->bindIndices(geometry.indices);
+
+		VertexArrayMacro macro{};
+		macro.bind();
+		macro.createBuffer("vertices", sizeof(Vertex) * geometry.vertices.size(), &geometry.vertices[0]);
+		macro.bindVertexAttribute("vertices", pipeline->map["pos"][0], 3, 2, (void*)0);
+		macro.bindVertexAttribute("vertices", pipeline->map["texCoord"][0], 2, 3, (void*)3);
+		macro.unbind();
+
+		pipeline->setMacro(&macro);
 
 		Texture test(pipeline->map["texSampler"][0], 0);
 		int height, width, channels;

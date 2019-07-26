@@ -2,13 +2,11 @@
 
 Pipeline::Pipeline() : ID(glCreateProgram()) {}
 
-Pipeline::Pipeline(Geometry geometry, const std::initializer_list<const Shader *> shaders) : geometry(geometry), ID(glCreateProgram())
+Pipeline::Pipeline(const std::initializer_list<const Shader *> shaders) : ID(glCreateProgram())
 {
 	for (const Shader * shader : shaders) attachShader(shader);
 	linkProgram();
 	getAttributeData();
-	macro = new VertexArrayMacro(map["pos"][0], map["texCoord"][0], geometry.vertices);
-	bindIndices(geometry.indices);
 }
 
 void Pipeline::linkProgram() {
@@ -62,6 +60,10 @@ void Pipeline::getAttributeData() {
 		std::string name((char*)&nameData[0], nameData.size() - 1);
 		map[name] = { GL_UNIFORM, values[2], values[1] };
 	}
+}
+
+void Pipeline::setMacro(VertexArrayMacro * macro) {
+	Pipeline::macro = macro;
 }
 
 void Pipeline::bindIndices(std::vector<uint16_t> indices) {

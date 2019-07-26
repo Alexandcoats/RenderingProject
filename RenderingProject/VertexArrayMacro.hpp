@@ -1,16 +1,15 @@
 #pragma once
 #include "Geometry.hpp"
+#include <map>
 
 class VertexArrayMacro
 {
 public:
 
 	unsigned int ID;
-	unsigned int vertexBufID;
+	std::map<const char*, unsigned int> bufferIDs;
 
 	VertexArrayMacro();
-
-	VertexArrayMacro(int posLocation, int texCoordLocation, std::vector<Vertex> vertices);
 
 	// Disable copying of VAOs
 	VertexArrayMacro(const VertexArrayMacro &) = delete;
@@ -21,10 +20,10 @@ public:
 
 	void bind();
 
-	void startRecording();
+	void unbind();
 
-	void stopRecording();
+	void createBuffer(const char * name, GLsizeiptr size, const void * data);
 
-	void bindVertices(unsigned int posLocation, unsigned int texCoordLocation, std::vector<Vertex> vertices);
+	void bindVertexAttribute(const char * name, unsigned int location, int size, int stride, const void * offset);
 };
 
