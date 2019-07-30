@@ -7,6 +7,10 @@
 #include "Pipeline.hpp"
 #include "FrameBuffer.hpp"
 #include "Texture.hpp"
+#include "MeshObject.hpp"
+#include "Camera.hpp"
+
+static const float WALK_SPEED = 50.0f, SPRINT_SPEED = 100.0f, CAMERA_SPEED = 10.0f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -15,6 +19,11 @@ class Application {
 	Map map;
 	Pipeline* pipeline;
 	FrameBuffer* frameBuffer;
+	Camera* camera;
+
+	bool keyboardState[256] = { false };
+	float speedModifier = 1.0f;
+	double cursorPos[2];
 
 public:
 	void run() {
@@ -37,6 +46,8 @@ public:
 
 			frameBuffer->startWrite();
 
+			glUniformMatrix4fv(pipeline->map["mvp"][0], 1, GL_FALSE, &(camera->projection*camera->view)[0][0]);
+
 			pipeline->draw();
 
 			frameBuffer->endWrite();
@@ -47,7 +58,29 @@ public:
 
 			auto endTime = std::chrono::high_resolution_clock::now();
 			float delta = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() / 1000.0f;
-			float speed_modifier = 1.0f / delta / 60.0f;
+			speedModifier = 1.0f / delta / 60.0f;
+
+			// Handle camera stuff
+			// We should move this somewhere better maybe
+			float speed;
+			if (keyboardState[GLFW_KEY_LEFT_SHIFT])
+				speed = SPRINT_SPEED;
+			else
+				speed = WALK_SPEED;
+			if (keyboardState[GLFW_KEY_W]) {
+				camera->translate(Direction::Forward, speed*speedModifier);
+			}
+			if (keyboardState[GLFW_KEY_S]) {
+				camera->translate(Direction::Backward, speed*speedModifier);
+			}
+			if (keyboardState[GLFW_KEY_A]) {
+				camera->translate(Direction::Left, speed*speedModifier);
+			}
+			if (keyboardState[GLFW_KEY_D]) {
+				camera->translate(Direction::Right, speed*speedModifier);
+			}
+
+			camera->update();
 		}
 
 		// Cleanup
@@ -73,6 +106,12 @@ public:
 			throw std::runtime_error("Failed to create GLFW window");
 		}
 
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		if (glfwRawMouseMotionSupported())
+			glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
+		glfwGetCursorPos(window, &cursorPos[0], &cursorPos[1]);
+
 		glfwSetWindowUserPointer(window, this);
 		glfwSetWindowSizeCallback(window, onWindowResized);
 
@@ -94,25 +133,23 @@ public:
 
 		pipeline = new Pipeline{ &VertShader, &FragShader };
 		pipeline->use();
-		pipeline->bindIndices(geometry.indices);
 
-		VertexArrayMacro macro{};
-		macro.bind();
-		macro.createBuffer("vertices", sizeof(Vertex) * geometry.vertices.size(), &geometry.vertices[0]);
-		macro.bindVertexAttribute("vertices", pipeline->map["pos"][0], 3, 2, (void*)0);
-		macro.bindVertexAttribute("vertices", pipeline->map["texCoord"][0], 2, 3, (void*)3);
-		macro.unbind();
+		//MeshObject mesh{"./models/test.obj", pipeline->map["pos"][0], pipeline->map["normal"][0], pipeline->map["texCoord"][0]};
+		MeshObject mesh{ "./models/test.obj", (unsigned int)pipeline->map["pos"][0], 0, (unsigned int)pipeline->map["texCoord"][0] };
+		mesh.writeMacros();
+		// mesh.draw() ???
 
-		pipeline->setMacro(&macro);
-
-		Texture test(pipeline->map["texSampler"][0], 0);
-		int height, width, channels;
-		unsigned char * pixels = stbi_load("./textures/texture.jpg", &width, &height, &channels, 4);
-		test.push(pixels, width, height);
+		// Here's what we'd do to handle textures...
+		// IF WE HAD ANY
+		//Texture test(pipeline->map["texSampler"][0], 0);
+		//int height, width, channels;
+		//unsigned char * pixels = stbi_load("./textures/texture.jpg", &width, &height, &channels, 4);
+		//test.push(pixels, width, height);
 	}
 
 	void initInput() {
 		glfwSetKeyCallback(window, handleKeyInput);
+		glfwSetCursorPosCallback(window, handleCursorInput);
 	}
 
 	static void onWindowResized(GLFWwindow * window, int width, int height) {
@@ -128,10 +165,25 @@ public:
 		// Do anything needed when window resizes
 	}
 
+	static void handleCursorInput(GLFWwindow* window, double xpos, double ypos) {
+		Application * app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
+
+		app->camera->rotate(Axis::V, CAMERA_SPEED*app->speedModifier*(xpos - app->cursorPos[0]));
+		app->camera->rotate(Axis::U, CAMERA_SPEED*app->speedModifier*(ypos - app->cursorPos[1]));
+
+		app->camera->update();
+		glUniformMatrix4fv(app->pipeline->map["mvp"][0], 1, GL_FALSE, &(app->camera->projection*app->camera->view)[0][0]);
+	}
+
 	static void handleKeyInput(GLFWwindow* window, int key, int scancode, int action, int mods) {
 		Application * app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 
-		// Do anything needed when there is keyboard input
+		if (action == GLFW_PRESS) {
+			app->keyboardState[key] = true;
+		}
+		else if (action == GLFW_RELEASE) {
+			app->keyboardState[key] = false;
+		}
 	}
 };
 

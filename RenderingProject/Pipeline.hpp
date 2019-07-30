@@ -15,8 +15,6 @@ public:
 	unsigned int indexBufID;
 	std::map<std::string, std::vector<int>> map;
 
-	VertexArrayMacro * macro;
-
 	Geometry geometry;
 
 	Pipeline();
@@ -35,10 +33,6 @@ public:
 	void use() { glUseProgram(ID); };
 
 	void attachShader(const Shader * shader);
-
-	void setMacro(VertexArrayMacro * macro);
-
-	void bindIndices(std::vector<uint16_t> indices);
 
 	void getAttributeData();
 

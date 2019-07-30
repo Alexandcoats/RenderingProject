@@ -62,24 +62,15 @@ void Pipeline::getAttributeData() {
 	}
 }
 
-void Pipeline::setMacro(VertexArrayMacro * macro) {
-	Pipeline::macro = macro;
-}
-
-void Pipeline::bindIndices(std::vector<uint16_t> indices) {
-	glGenBuffers(1, &indexBufID);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBufID);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(uint16_t) * indices.size(), &indices[0], GL_STATIC_DRAW);
-}
-
 void Pipeline::attachShader(const Shader * shader) {
 	glAttachShader(ID, shader->ID);
 }
 
 void Pipeline::draw() {
 	use();
-	macro->bind();
-	glDrawElements(GL_TRIANGLES, geometry.indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+	// Call draw method on mesh?
+	// Maybe do nothing here?
+	//glDrawElements(GL_TRIANGLES, geometry.indices.size(), GL_UNSIGNED_SHORT, (void*)0);
 }
 
 #ifndef NDEBUG

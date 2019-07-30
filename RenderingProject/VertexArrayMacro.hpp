@@ -1,13 +1,10 @@
 #pragma once
-#include "Geometry.hpp"
-#include <map>
 
 class VertexArrayMacro
 {
 public:
 
 	unsigned int ID;
-	std::map<const char*, unsigned int> bufferIDs;
 
 	VertexArrayMacro();
 
@@ -22,8 +19,6 @@ public:
 
 	void unbind();
 
-	void createBuffer(const char * name, GLsizeiptr size, const void * data);
-
-	void bindVertexAttribute(const char * name, unsigned int location, int size, int stride, const void * offset);
+	void writeVertexAttribute(unsigned int bufferID, unsigned int location, int size, int stride, const void * offset);
 };
 
