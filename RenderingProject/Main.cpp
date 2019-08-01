@@ -5,12 +5,11 @@
 #include <iostream>
 #include "Map.hpp"
 #include "Pipeline.hpp"
-//#include "FrameBuffer.hpp"
 #include "Texture.hpp"
 #include "MeshObject.hpp"
 #include "Camera.hpp"
 
-static const float WALK_SPEED = 50.0f, SPRINT_SPEED = 100.0f, CAMERA_SPEED = 10.0f;
+static const float WALK_SPEED = 5.0f, SPRINT_SPEED = 10.0f, CAMERA_SPEED = 1.0f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -18,10 +17,9 @@ class Application {
 	GLFWwindow* window;
 	Map map;
 	Pipeline* pipeline;
-	//FrameBuffer* frameBuffer;
 	Camera* camera;
 
-	bool keyboardState[256] = { false };
+	bool keyboardState[GLFW_KEY_LAST] = { false };
 	float speedModifier = 1.0f;
 	double cursorPos[2];
 
@@ -33,6 +31,7 @@ public:
 		//map.saveMap("./textures/output.png");
 		
 		initWindow();
+		initInput();
 		initPipeline();
 		mainLoop();
 	}
@@ -41,8 +40,6 @@ public:
 		float speed_modifier = 1.0f;
 		while (!glfwWindowShouldClose(window)) {
 			auto startTime = std::chrono::high_resolution_clock::now();
-		
-			//frameBuffer->startWrite();
 
 			int width, height;
 			glfwGetFramebufferSize(window, &width, &height);
@@ -59,12 +56,6 @@ public:
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();
-
-			//frameBuffer->endWrite();
-
-			//frameBuffer->copyToSystemFramebuffer(glm::ivec2(width, height), GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-			//frameBuffer->bindDepthTexture(GL_TEXTURE5);
 
 			auto endTime = std::chrono::high_resolution_clock::now();
 			float delta = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() / 1000.0f;
@@ -91,6 +82,9 @@ public:
 			}
 
 			camera->update();
+
+			glClearColor(camera->pos.x/1000.0f, camera->pos.y / 1000.0f, camera->pos.z / 1000.0f, 1.0f);
+			//std::cout << "(" << camera->pos.x << ", " << camera->pos.y << ", " << camera->pos.z << ") (" << camera->dir.x << ", " << camera->dir.y << ", " << camera->dir.z << ")" << std::endl;
 		}
 
 		// Cleanup
@@ -133,11 +127,9 @@ public:
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
+		//glEnable(GL_CULL_FACE);
 
 		camera = new Camera(width, height, glm::vec3(-40.0f, -45.0f, 75.0f), glm::vec3(1.0f, 1.1f, -0.9f), glm::vec3(0.0f, 0.0f, 1.0f));
-
-		//frameBuffer = new FrameBuffer(glm::ivec2(width, height));
 	}
 
 	void initPipeline() {
