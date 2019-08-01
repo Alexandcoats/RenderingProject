@@ -5,7 +5,7 @@ MeshObject::MeshObject(std::string filepath, unsigned int vertexLocation, unsign
 	locations[0] = vertexLocation;
 	locations[1] = normalLocation;
 	locations[2] = uvLocation;
-	std::string extension = filepath.substr(filepath.size() - 5, 4);
+	std::string extension = filepath.substr(filepath.size() - 4, 4);
 	//read file
 	if (extension == ".obj")
 	{
@@ -19,6 +19,13 @@ MeshObject::MeshObject(std::string filepath, unsigned int vertexLocation, unsign
 	{
 		throw std::runtime_error("Cannot load file: invalid file path " + filepath);
 	}
+}
+
+void MeshObject::draw() {
+	vertexMacro->bind();
+	if (bufferIDs[1]) normalMacro->bind();
+	if (bufferIDs[2]) uvMacro->bind();
+	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
 }
 
 void MeshObject::createBuffer(unsigned int * bufferID, GLsizeiptr size, const void * data) {
@@ -48,6 +55,8 @@ void MeshObject::createBuffers(std::vector<float> vertexData, std::vector<float>
 
 	//create index buffer
 	createBuffer(&bufferIDs[3], indexData.size() * sizeof(unsigned int), &indexData.front());
+
+	indexSize = indexData.size();
 }
 
 void MeshObject::writeMacros() {

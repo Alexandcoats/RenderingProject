@@ -7,6 +7,7 @@
 #include "VertexArrayMacro.hpp"
 #include "Geometry.hpp"
 #include <vector>
+#include "MeshObject.hpp"
 
 class Pipeline
 {
@@ -14,6 +15,7 @@ public:
 	unsigned int ID;
 	unsigned int indexBufID;
 	std::map<std::string, std::vector<int>> map;
+	std::vector<MeshObject> meshes;
 
 	Geometry geometry;
 

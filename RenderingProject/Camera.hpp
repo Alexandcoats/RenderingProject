@@ -46,6 +46,10 @@ public:
 		view = glm::lookAt(pos, pos + dir, up);
 	}
 
+	void resize(float width, float height) {
+		projection = glm::perspective(glm::radians(50.0f), width / height, 0.1f, 256.0f);
+	}
+
 	void translate(Direction direction, float magnitude) {
 		switch (direction) {
 		case Forward:

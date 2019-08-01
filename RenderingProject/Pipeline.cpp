@@ -67,10 +67,12 @@ void Pipeline::attachShader(const Shader * shader) {
 }
 
 void Pipeline::draw() {
-	use();
 	// Call draw method on mesh?
 	// Maybe do nothing here?
 	//glDrawElements(GL_TRIANGLES, geometry.indices.size(), GL_UNSIGNED_SHORT, (void*)0);
+	for (auto mesh : meshes) {
+		mesh.draw();
+	}
 }
 
 #ifndef NDEBUG

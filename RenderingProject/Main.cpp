@@ -5,7 +5,7 @@
 #include <iostream>
 #include "Map.hpp"
 #include "Pipeline.hpp"
-#include "FrameBuffer.hpp"
+//#include "FrameBuffer.hpp"
 #include "Texture.hpp"
 #include "MeshObject.hpp"
 #include "Camera.hpp"
@@ -18,7 +18,7 @@ class Application {
 	GLFWwindow* window;
 	Map map;
 	Pipeline* pipeline;
-	FrameBuffer* frameBuffer;
+	//FrameBuffer* frameBuffer;
 	Camera* camera;
 
 	bool keyboardState[256] = { false };
@@ -33,7 +33,6 @@ public:
 		//map.saveMap("./textures/output.png");
 		
 		initWindow();
-		frameBuffer = new FrameBuffer(glm::ivec2(INIT_WIDTH, INIT_HEIGHT));
 		initPipeline();
 		mainLoop();
 	}
@@ -42,19 +41,30 @@ public:
 		float speed_modifier = 1.0f;
 		while (!glfwWindowShouldClose(window)) {
 			auto startTime = std::chrono::high_resolution_clock::now();
-			glfwPollEvents();
+		
+			//frameBuffer->startWrite();
 
-			frameBuffer->startWrite();
+			int width, height;
+			glfwGetFramebufferSize(window, &width, &height);
 
-			glUniformMatrix4fv(pipeline->map["mvp"][0], 1, GL_FALSE, &(camera->projection*camera->view)[0][0]);
+			glViewport(0, 0, width, height);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			pipeline->use();
+
+			glUniformMatrix4fv(pipeline->map["mvp"][0], 1, GL_FALSE, &(camera->view*camera->projection)[0][0]);
 
 			pipeline->draw();
 
-			frameBuffer->endWrite();
+			glfwSwapBuffers(window);
+			glfwPollEvents();
 
-			frameBuffer->copyToSystemFramebuffer(glm::ivec2(width, height), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+			//frameBuffer->endWrite();
 
-			frameBuffer->bindDepthTexture(GL_TEXTURE5);
+			//frameBuffer->copyToSystemFramebuffer(glm::ivec2(width, height), GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+			//frameBuffer->bindDepthTexture(GL_TEXTURE5);
 
 			auto endTime = std::chrono::high_resolution_clock::now();
 			float delta = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count() / 1000.0f;
@@ -119,28 +129,30 @@ public:
 		{
 			throw std::runtime_error("Failed initialize OpenGL extensions");
 		}
+		glfwSwapInterval(1);
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
+
+		camera = new Camera(width, height, glm::vec3(-40.0f, -45.0f, 75.0f), glm::vec3(1.0f, 1.1f, -0.9f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+		//frameBuffer = new FrameBuffer(glm::ivec2(width, height));
 	}
 
 	void initPipeline() {
 		Shader VertShader{ "./shaders/basic_shader.vert", GL_VERTEX_SHADER };
 		Shader FragShader{ "./shaders/basic_shader.frag", GL_FRAGMENT_SHADER };
 
-		Geometry geometry{};
-
 		pipeline = new Pipeline{ &VertShader, &FragShader };
 		pipeline->use();
 
 		//MeshObject mesh{"./models/test.obj", pipeline->map["pos"][0], pipeline->map["normal"][0], pipeline->map["texCoord"][0]};
-		MeshObject mesh{ "./models/test.obj", (unsigned int)pipeline->map["pos"][0], 0, (unsigned int)pipeline->map["texCoord"][0] };
+		MeshObject mesh{ "./models/teapot.obj", (unsigned int)pipeline->map["pos"][0], 0, 0 };
 		mesh.writeMacros();
-		// mesh.draw() ???
+		
+		pipeline->meshes.push_back(mesh);
 
-		// Here's what we'd do to handle textures...
-		// IF WE HAD ANY
 		//Texture test(pipeline->map["texSampler"][0], 0);
 		//int height, width, channels;
 		//unsigned char * pixels = stbi_load("./textures/texture.jpg", &width, &height, &channels, 4);
@@ -161,6 +173,8 @@ public:
 		app->height = height;
 
 		glViewport(0, 0, width, height);
+
+		app->camera->resize(width, height);
 
 		// Do anything needed when window resizes
 	}

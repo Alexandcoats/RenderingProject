@@ -26,6 +26,8 @@ public:
 
 	VertexArrayMacro * vertexMacro, * normalMacro, * uvMacro;
 
+	unsigned int indexSize;
+
 	std::string filepath;
 
 	MeshObject(std::string filepath, unsigned int vertexLocation, unsigned int normalLocation, unsigned int uvLocation);
@@ -34,6 +36,8 @@ public:
 	void createBuffers(std::vector<float> vertexData, std::vector<float> normalData, std::vector<float> uvData, std::vector<unsigned int> indexData);
 
 	void writeMacros();
+
+	void draw();
 
 private:
 
