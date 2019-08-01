@@ -28,7 +28,7 @@
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="VertexArrayMacro.cpp" />
+    <ClCompile Include="VertexArrayObject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
@@ -39,7 +39,7 @@
     <ClInclude Include="Pipeline.hpp" />
     <ClInclude Include="Shader.hpp" />
     <ClInclude Include="Texture.hpp" />
-    <ClInclude Include="VertexArrayMacro.hpp" />
+    <ClInclude Include="VertexArrayObject.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

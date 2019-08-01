@@ -22,10 +22,9 @@ MeshObject::MeshObject(std::string filepath, unsigned int vertexLocation, unsign
 }
 
 void MeshObject::draw() {
-	vertexMacro->bind();
-	if (bufferIDs[1]) normalMacro->bind();
-	if (bufferIDs[2]) uvMacro->bind();
+	vao->bind();
 	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
+	vao->unbind();
 }
 
 void MeshObject::createBuffer(unsigned int * bufferID, GLsizeiptr size, const void * data) {
@@ -34,52 +33,44 @@ void MeshObject::createBuffer(unsigned int * bufferID, GLsizeiptr size, const vo
 	glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
 }
 
+void MeshObject::createIndexBuffer(unsigned int * bufferID, GLsizeiptr size, const void * data) {
+	glGenBuffers(1, bufferID);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *bufferID);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+}
+
 
 void MeshObject::createBuffers(std::vector<float> vertexData, std::vector<float> normalData, std::vector<float> uvData, std::vector<unsigned int> indexData) {
 	//std::cout << "Creating model VBOs in OpenGL" << std::endl;
 
+	vao = new VertexArrayObject();
+	vao->bind();
+
 	//create vertex buffer
 	createBuffer(&bufferIDs[0], vertexData.size() * sizeof(float), &vertexData.front());
+
+	//create index buffer
+	createIndexBuffer(&bufferIDs[3], indexData.size() * sizeof(unsigned int), &indexData.front());
+
+	vao->writeVertexAttribute(locations[0], 3, 0, (void*)0);
 
 	if (locations[1] && !normalData.empty())
 	{
 		//create normal buffer
 		createBuffer(&bufferIDs[1], normalData.size() * sizeof(float), &normalData.front());
+		vao->writeVertexAttribute(locations[1], 3, 0, (void*)0);
 	}
 
 	if (locations[2] && !uvData.empty())
 	{
 		//create UV buffer
 		createBuffer(&bufferIDs[2], uvData.size() * sizeof(float), &uvData.front());
+		vao->writeVertexAttribute(locations[2], 2, 0, (void*)0);
 	}
 
-	//create index buffer
-	createBuffer(&bufferIDs[3], indexData.size() * sizeof(unsigned int), &indexData.front());
+	vao->unbind();
 
 	indexSize = indexData.size();
-}
-
-void MeshObject::writeMacros() {
-	vertexMacro = new VertexArrayMacro();
-	vertexMacro->bind();
-	vertexMacro->writeVertexAttribute(bufferIDs[0], locations[0], 3, 0, (void*)0);
-	vertexMacro->unbind();
-
-	if (bufferIDs[1])
-	{
-		normalMacro = new VertexArrayMacro();
-		normalMacro->bind();
-		normalMacro->writeVertexAttribute(bufferIDs[1], locations[1], 3, 0, (void*)0);
-		normalMacro->unbind();
-	}
-
-	if (bufferIDs[2])
-	{
-		uvMacro = new VertexArrayMacro();
-		uvMacro->bind();
-		uvMacro->writeVertexAttribute(bufferIDs[2], locations[2], 2, 0, (void*)0);
-		uvMacro->unbind();
-	}
 }
 
 void MeshObject::readOBJ(std::string filepath) {

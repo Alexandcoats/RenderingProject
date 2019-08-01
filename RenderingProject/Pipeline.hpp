@@ -4,7 +4,7 @@
 #include <map>
 #include <vector>
 #include "Shader.hpp"
-#include "VertexArrayMacro.hpp"
+#include "VertexArrayObject.hpp"
 #include "Geometry.hpp"
 #include <vector>
 #include "MeshObject.hpp"

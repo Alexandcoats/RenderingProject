@@ -9,7 +9,7 @@
 #include "MeshObject.hpp"
 #include "Camera.hpp"
 
-static const float WALK_SPEED = 5.0f, SPRINT_SPEED = 10.0f, CAMERA_SPEED = 1.0f;
+static const float WALK_SPEED = 5.0f, SPRINT_SPEED = 10.0f, CAMERA_SPEED = 0.001f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -82,9 +82,10 @@ public:
 			}
 
 			camera->update();
+			glUniformMatrix4fv(pipeline->map["mvp"][0], 1, GL_FALSE, &(glm::transpose(camera->projection*camera->view))[0][0]);
 
-			glClearColor(camera->pos.x/1000.0f, camera->pos.y / 1000.0f, camera->pos.z / 1000.0f, 1.0f);
-			//std::cout << "(" << camera->pos.x << ", " << camera->pos.y << ", " << camera->pos.z << ") (" << camera->dir.x << ", " << camera->dir.y << ", " << camera->dir.z << ")" << std::endl;
+			//glClearColor(camera->pos.x/1000.0f, camera->pos.y / 1000.0f, camera->pos.z / 1000.0f, 1.0f);
+			std::cout << "(" << camera->pos.x << ", " << camera->pos.y << ", " << camera->pos.z << ") (" << camera->dir.x << ", " << camera->dir.y << ", " << camera->dir.z << ")" << std::endl;
 		}
 
 		// Cleanup
@@ -129,7 +130,7 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		//glEnable(GL_CULL_FACE);
 
-		camera = new Camera(width, height, glm::vec3(-40.0f, -45.0f, 75.0f), glm::vec3(1.0f, 1.1f, -0.9f), glm::vec3(0.0f, 0.0f, 1.0f));
+		camera = new Camera(width, height, glm::vec3(-5.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	void initPipeline() {
@@ -141,7 +142,6 @@ public:
 
 		//MeshObject mesh{"./models/test.obj", pipeline->map["pos"][0], pipeline->map["normal"][0], pipeline->map["texCoord"][0]};
 		MeshObject mesh{ "./models/teapot.obj", (unsigned int)pipeline->map["pos"][0], 0, 0 };
-		mesh.writeMacros();
 		
 		pipeline->meshes.push_back(mesh);
 
@@ -177,8 +177,11 @@ public:
 		app->camera->rotate(Axis::V, CAMERA_SPEED*app->speedModifier*(xpos - app->cursorPos[0]));
 		app->camera->rotate(Axis::U, CAMERA_SPEED*app->speedModifier*(ypos - app->cursorPos[1]));
 
+		app->cursorPos[0] = xpos;
+		app->cursorPos[1] = ypos;
+
 		app->camera->update();
-		glUniformMatrix4fv(app->pipeline->map["mvp"][0], 1, GL_FALSE, &(app->camera->projection*app->camera->view)[0][0]);
+		glUniformMatrix4fv(app->pipeline->map["mvp"][0], 1, GL_FALSE, &(glm::transpose(app->camera->projection*app->camera->view))[0][0]);
 	}
 
 	static void handleKeyInput(GLFWwindow* window, int key, int scancode, int action, int mods) {
