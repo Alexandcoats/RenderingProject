@@ -94,6 +94,5 @@ void Pipeline::checkForErrors() {
 
 Pipeline::~Pipeline()
 {
-	glDeleteBuffers(1, &indexBufID);
 	glDeleteProgram(ID);
 }

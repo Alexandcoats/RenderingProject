@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClCompile Include="external\glad\src\glad.c" />
     <ClCompile Include="FrameBuffer.cpp" />
-    <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MeshObject.cpp" />
     <ClCompile Include="Map.cpp" />
@@ -33,7 +32,6 @@
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="FrameBuffer.hpp" />
-    <ClInclude Include="Geometry.hpp" />
     <ClInclude Include="MeshObject.hpp" />
     <ClInclude Include="Map.hpp" />
     <ClInclude Include="Pipeline.hpp" />

@@ -9,7 +9,7 @@
 #include "MeshObject.hpp"
 #include "Camera.hpp"
 
-static const float WALK_SPEED = 5.0f, SPRINT_SPEED = 10.0f, CAMERA_SPEED = 0.001f;
+static const float WALK_SPEED = 0.5f, SPRINT_SPEED = 1.0f, CAMERA_SPEED = 0.001f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -50,7 +50,8 @@ public:
 
 			pipeline->use();
 
-			glUniformMatrix4fv(pipeline->map["mvp"][0], 1, GL_FALSE, &(camera->view*camera->projection)[0][0]);
+			// This will need to move into the mesh objects as they will all have individual model matrices
+			glUniformMatrix4fv(pipeline->map["mvp"][1], 1, GL_FALSE, &(camera->projection*camera->view)[0][0]);
 
 			pipeline->draw();
 
@@ -82,24 +83,26 @@ public:
 			}
 
 			camera->update();
-			glUniformMatrix4fv(pipeline->map["mvp"][0], 1, GL_FALSE, &(glm::transpose(camera->projection*camera->view))[0][0]);
 
 			//glClearColor(camera->pos.x/1000.0f, camera->pos.y / 1000.0f, camera->pos.z / 1000.0f, 1.0f);
-			std::cout << "(" << camera->pos.x << ", " << camera->pos.y << ", " << camera->pos.z << ") (" << camera->dir.x << ", " << camera->dir.y << ", " << camera->dir.z << ")" << std::endl;
+			//std::cout << "(" << camera->pos.x << ", " << camera->pos.y << ", " << camera->pos.z << ") (" << camera->dir.x << ", " << camera->dir.y << ", " << camera->dir.z << ")" << std::endl;
 		}
 
 		// Cleanup
 
-		//glfwDestroyWindow(window);
+		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
 
 	void initWindow() {
+
+		glfwSetErrorCallback(onWindowError);
+
 		if(!glfwInit()) throw std::runtime_error("Failed to initialize GLFW");
 		//glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-		//glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		//glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 		//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 		window = glfwCreateWindow(INIT_WIDTH, INIT_HEIGHT, "Rendering Lunch and Learn", nullptr, nullptr);
@@ -111,12 +114,6 @@ public:
 			throw std::runtime_error("Failed to create GLFW window");
 		}
 
-		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		if (glfwRawMouseMotionSupported())
-			glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-
-		glfwGetCursorPos(window, &cursorPos[0], &cursorPos[1]);
-
 		glfwSetWindowUserPointer(window, this);
 		glfwSetWindowSizeCallback(window, onWindowResized);
 
@@ -126,11 +123,11 @@ public:
 		}
 		glfwSwapInterval(1);
 
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
 		//glEnable(GL_CULL_FACE);
 
-		camera = new Camera(width, height, glm::vec3(-5.0f, -5.0f, 0.0f), glm::vec3(1.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		camera = new Camera(width, height, glm::vec3(-5.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	void initPipeline() {
@@ -140,20 +137,30 @@ public:
 		pipeline = new Pipeline{ &VertShader, &FragShader };
 		pipeline->use();
 
-		//MeshObject mesh{"./models/test.obj", pipeline->map["pos"][0], pipeline->map["normal"][0], pipeline->map["texCoord"][0]};
-		MeshObject mesh{ "./models/teapot.obj", (unsigned int)pipeline->map["pos"][0], 0, 0 };
-		
-		pipeline->meshes.push_back(mesh);
+		Texture test(pipeline->map["texSampler"][1], 0);
+		int height, width, channels;
+		unsigned char * pixels = stbi_load("./textures/chalet.jpg", &width, &height, &channels, 4);
+		test.push(pixels, width, height, channels);
 
-		//Texture test(pipeline->map["texSampler"][0], 0);
-		//int height, width, channels;
-		//unsigned char * pixels = stbi_load("./textures/texture.jpg", &width, &height, &channels, 4);
-		//test.push(pixels, width, height);
+		MeshObject mesh{ "./models/chalet.obj", pipeline->map["pos"][1], -1, pipeline->map["texCoord"][1] };
+
+		pipeline->meshes.push_back(mesh);
 	}
 
 	void initInput() {
+		glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		if (glfwRawMouseMotionSupported())
+			glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+
+		glfwGetCursorPos(window, &cursorPos[0], &cursorPos[1]);
+
 		glfwSetKeyCallback(window, handleKeyInput);
 		glfwSetCursorPosCallback(window, handleCursorInput);
+	}
+
+	static void onWindowError(int error, const char* description)
+	{
+		std::cout << "Error: " << description << std::endl;
 	}
 
 	static void onWindowResized(GLFWwindow * window, int width, int height) {
@@ -174,14 +181,13 @@ public:
 	static void handleCursorInput(GLFWwindow* window, double xpos, double ypos) {
 		Application * app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 
-		app->camera->rotate(Axis::V, CAMERA_SPEED*app->speedModifier*(xpos - app->cursorPos[0]));
-		app->camera->rotate(Axis::U, CAMERA_SPEED*app->speedModifier*(ypos - app->cursorPos[1]));
+		app->camera->rotate(Axis::V, CAMERA_SPEED*app->speedModifier*(app->cursorPos[0] - xpos));
+		app->camera->rotate(Axis::U, CAMERA_SPEED*app->speedModifier*(app->cursorPos[1] - ypos));
 
 		app->cursorPos[0] = xpos;
 		app->cursorPos[1] = ypos;
 
 		app->camera->update();
-		glUniformMatrix4fv(app->pipeline->map["mvp"][0], 1, GL_FALSE, &(glm::transpose(app->camera->projection*app->camera->view))[0][0]);
 	}
 
 	static void handleKeyInput(GLFWwindow* window, int key, int scancode, int action, int mods) {

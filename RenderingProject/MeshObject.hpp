@@ -3,9 +3,11 @@
 #include <algorithm>
 #include <unordered_map>
 #include <glad/glad.h>
-#include <glm\glm.hpp>
+#include <glm/glm.hpp>
 #include <tiny_obj_loader.h>
 #include "VertexArrayObject.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/hash.hpp>
 
 /*
   Resource type for loading vertex geometry data.
@@ -18,11 +20,28 @@
   index
 */
 
+struct Vertex {
+	glm::vec3 pos;
+	glm::vec2 texCoord;
+
+	bool operator==(const Vertex & other) const {
+		return pos == other.pos && texCoord == other.texCoord;
+	}
+};
+
+namespace std {
+	template<> struct hash<Vertex> {
+		size_t operator()(Vertex const& vertex) const {
+			return (hash<glm::vec3>()(vertex.pos) ^ (hash<glm::vec2>()(vertex.texCoord) << 1));
+		}
+	};
+}
+
 class MeshObject
 {
 public:
-	unsigned int bufferIDs[4];
-	unsigned int locations[3];
+	unsigned int bufferIDs[2];
+	int locations[3];
 
 	VertexArrayObject * vao;
 
@@ -30,10 +49,10 @@ public:
 
 	std::string filepath;
 
-	MeshObject(std::string filepath, unsigned int vertexLocation, unsigned int normalLocation, unsigned int uvLocation);
+	MeshObject(std::string filepath, int vertexLocation, int normalLocation, int uvLocation);
 	~MeshObject();
 
-	void createBuffers(std::vector<float> vertexData, std::vector<float> normalData, std::vector<float> uvData, std::vector<unsigned int> indexData);
+	void createBuffers(std::vector<Vertex> vertexData, std::vector<unsigned int> indexData);
 
 	void draw();
 

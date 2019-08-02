@@ -37,8 +37,8 @@ public:
 		Camera(width, height, glm::vec3(), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 	Camera(float width, float height, glm::vec3 pos, glm::vec3 dir, glm::vec3 up) : pos(pos), dir(dir), up(up) {
-		view = glm::lookAt(pos, pos + dir, up);
-		projection = glm::perspective(glm::radians(50.0f), width / height, 0.1f, 256.0f);
+		update();
+		resize(width, height);
 	};
 	~Camera() {}
 
@@ -48,21 +48,22 @@ public:
 
 	void resize(float width, float height) {
 		projection = glm::perspective(glm::radians(50.0f), width / height, 0.1f, 256.0f);
+		//projection = glm::ortho(-5.f, 5.f, 5.f, -5.f);
 	}
 
 	void translate(Direction direction, float magnitude) {
 		switch (direction) {
 		case Forward:
-			pos = glm::vec3(glm::translate(glm::mat4(), magnitude*FORWARD)*glm::vec4(pos, 1.0f));
+			pos += magnitude * FORWARD;
 			break;
 		case Backward:
-			pos = glm::vec3(glm::translate(glm::mat4(), magnitude*BACKWARD)*glm::vec4(pos, 1.0f));
+			pos += magnitude * BACKWARD;
 			break;
 		case Left:
-			pos = glm::vec3(glm::translate(glm::mat4(), magnitude*LEFT)*glm::vec4(pos, 1.0f));
+			pos += magnitude * LEFT;
 			break;
 		case Right:
-			pos = glm::vec3(glm::translate(glm::mat4(), magnitude*RIGHT)*glm::vec4(pos, 1.0f));
+			pos += magnitude * RIGHT;
 			break;
 		}
 		update();

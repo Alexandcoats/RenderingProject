@@ -44,5 +44,5 @@ void Shader::checkForErrors() const {
 
 Shader::~Shader()
 {
-	glDeleteShader(ID);
+	//glDeleteShader(ID);
 }

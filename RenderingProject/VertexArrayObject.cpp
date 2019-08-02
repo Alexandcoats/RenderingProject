@@ -15,8 +15,8 @@ void VertexArrayObject::writeVertexAttribute(unsigned int location, int size, in
 }
 
 void VertexArrayObject::unbind() {
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 VertexArrayObject::~VertexArrayObject()

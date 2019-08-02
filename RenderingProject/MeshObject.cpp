@@ -1,7 +1,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "MeshObject.hpp"
+#include <iostream>
 
-MeshObject::MeshObject(std::string filepath, unsigned int vertexLocation, unsigned int normalLocation, unsigned int uvLocation) : filepath(filepath) {
+MeshObject::MeshObject(std::string filepath, int vertexLocation, int normalLocation, int uvLocation) : filepath(filepath) {
 	locations[0] = vertexLocation;
 	locations[1] = normalLocation;
 	locations[2] = uvLocation;
@@ -11,10 +12,12 @@ MeshObject::MeshObject(std::string filepath, unsigned int vertexLocation, unsign
 	{
 		readOBJ(filepath);
 	}
+	/*
 	else if (extension == ".pxo")
 	{
 		readPXO(filepath);
 	}
+	*/
 	else
 	{
 		throw std::runtime_error("Cannot load file: invalid file path " + filepath);
@@ -23,6 +26,7 @@ MeshObject::MeshObject(std::string filepath, unsigned int vertexLocation, unsign
 
 void MeshObject::draw() {
 	vao->bind();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
 	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
 	vao->unbind();
 }
@@ -40,33 +44,36 @@ void MeshObject::createIndexBuffer(unsigned int * bufferID, GLsizeiptr size, con
 }
 
 
-void MeshObject::createBuffers(std::vector<float> vertexData, std::vector<float> normalData, std::vector<float> uvData, std::vector<unsigned int> indexData) {
+void MeshObject::createBuffers(std::vector<Vertex> vertexData, std::vector<unsigned int> indexData) {
 	//std::cout << "Creating model VBOs in OpenGL" << std::endl;
 
 	vao = new VertexArrayObject();
 	vao->bind();
 
 	//create vertex buffer
-	createBuffer(&bufferIDs[0], vertexData.size() * sizeof(float), &vertexData.front());
+	createBuffer(&bufferIDs[0], vertexData.size() * sizeof(Vertex), vertexData.data());
 
 	//create index buffer
-	createIndexBuffer(&bufferIDs[3], indexData.size() * sizeof(unsigned int), &indexData.front());
+	createIndexBuffer(&bufferIDs[1], indexData.size() * sizeof(unsigned int), indexData.data());
 
-	vao->writeVertexAttribute(locations[0], 3, 0, (void*)0);
+	vao->writeVertexAttribute(locations[0], 3, sizeof(glm::vec2), (void*)0);
 
-	if (locations[1] && !normalData.empty())
+	/*
+
+	if (locations[1] != -1 && !normalData.empty())
 	{
 		//create normal buffer
 		createBuffer(&bufferIDs[1], normalData.size() * sizeof(float), &normalData.front());
 		vao->writeVertexAttribute(locations[1], 3, 0, (void*)0);
 	}
 
-	if (locations[2] && !uvData.empty())
+	*/
+
+	if (locations[2] != -1)
 	{
-		//create UV buffer
-		createBuffer(&bufferIDs[2], uvData.size() * sizeof(float), &uvData.front());
-		vao->writeVertexAttribute(locations[2], 2, 0, (void*)0);
+		vao->writeVertexAttribute(locations[2], sizeof(glm::vec3), 0, (void*)0);
 	}
+
 
 	vao->unbind();
 
@@ -80,89 +87,42 @@ void MeshObject::readOBJ(std::string filepath) {
 	std::vector<tinyobj::shape_t> shapes;
 	std::vector<tinyobj::material_t> materials;
 
-	std::string warn;
-	std::string err;
+	std::string warn, err;
 
-	bool success = tinyobj::LoadObj(&attrib, &shapes, &materials, &err, filepath.c_str());
+	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str()))
+		throw std::runtime_error(warn + err);
 
-	if (!err.empty() || !success)
-	{
-		throw std::runtime_error("Error loading file " + filepath);
-	}
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
 
-	//convert to indexed data
-	std::unordered_map<std::string, int> face_pts;
+	std::unordered_map<Vertex, unsigned int> uniqueVertices = {};
 
-	std::vector<unsigned int> indexes;
-	std::vector<float> vertexes_indexed;
-	std::vector<float> normals_indexed;
-	std::vector<float> uvs_indexed;
+	for (const auto & shape : shapes) {
+		for (const auto & index : shape.mesh.indices) {
+			Vertex vertex = {};
+			vertex.pos = {
+				attrib.vertices[3 * index.vertex_index + 0],
+				attrib.vertices[3 * index.vertex_index + 1],
+				attrib.vertices[3 * index.vertex_index + 2]
+			};
+			vertex.texCoord = {
+				attrib.texcoords[2 * index.texcoord_index + 0],
+				attrib.texcoords[2 * index.texcoord_index + 1]
+			};
 
-	//reserve worst-case max size
-	face_pts.reserve(shapes[0].mesh.indices.size());
-	indexes.reserve(shapes[0].mesh.indices.size());
-	vertexes_indexed.reserve(attrib.vertices.size());
-	normals_indexed.reserve(attrib.normals.size());
-	uvs_indexed.reserve(attrib.texcoords.size());
-
-	int indexedCount = 0;
-	for (int i = 0; i < shapes[0].mesh.indices.size(); i++)
-	{
-		int vert_idx = shapes[0].mesh.indices[i].vertex_index;
-		int tex_idx = shapes[0].mesh.indices[i].texcoord_index;
-		int norm_idx = shapes[0].mesh.indices[i].normal_index;
-
-		//check if already indexed
-		std::string findThis;
-		findThis = std::to_string(vert_idx) + '/' + std::to_string(tex_idx) + '/' + std::to_string(norm_idx);
-
-		if (face_pts.find(findThis) != face_pts.end())
-		{
-			//point is already indexed
-			indexes.push_back(face_pts[findThis]);
-		}
-		else  //new point
-		{
-			//add vertex
-			if (vert_idx != -1)
-			{
-				vertexes_indexed.push_back(attrib.vertices[3 * vert_idx + 0]);
-				vertexes_indexed.push_back(attrib.vertices[3 * vert_idx + 1]);
-				vertexes_indexed.push_back(attrib.vertices[3 * vert_idx + 2]);
+			if (uniqueVertices.count(vertex) == 0) {
+				uniqueVertices[vertex] = static_cast<unsigned int>(vertices.size());
+				vertices.push_back(vertex);
 			}
-
-			//add UV
-			if (tex_idx != -1)
-			{
-				uvs_indexed.push_back(attrib.texcoords[2 * tex_idx + 0]);
-				uvs_indexed.push_back(attrib.texcoords[2 * tex_idx + 1]);
-			}
-
-			//add normal
-			if (norm_idx != -1)
-			{
-				normals_indexed.push_back(attrib.normals[3 * norm_idx + 0]);
-				normals_indexed.push_back(attrib.normals[3 * norm_idx + 1]);
-				normals_indexed.push_back(attrib.normals[3 * norm_idx + 2]);
-			}
-
-			//add index
-			indexes.push_back(indexedCount);
-
-			//add to face records
-			face_pts.insert({ findThis, indexedCount++ });
+			indices.push_back(uniqueVertices[vertex]);
 		}
 	}
-
-	//trim data footprint
-	vertexes_indexed.shrink_to_fit();
-	normals_indexed.shrink_to_fit();
-	uvs_indexed.shrink_to_fit();
-	indexes.shrink_to_fit();
 
 	//pass data to OpenGL
-	this->createBuffers(vertexes_indexed, normals_indexed, uvs_indexed, indexes);
+	this->createBuffers(vertices, indices);
 }
+
+/*
 
 void MeshObject::readPXO(std::string filepath) {
 	//std::cout << "Reading PXO file: " << filepath << std::endl;
@@ -190,6 +150,8 @@ void MeshObject::readPXO(std::string filepath) {
 	this->createBuffers(verts, norms, uvs, indexes);
 }
 
+*/
+
 MeshObject::~MeshObject() {
-	glDeleteBuffers(4, bufferIDs);
+	//glDeleteBuffers(2, bufferIDs);
 }

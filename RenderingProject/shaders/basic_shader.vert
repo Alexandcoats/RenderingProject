@@ -3,14 +3,15 @@
 uniform mat4 mvp;
 
 in vec3 pos;
+in vec2 texCoord;
 
-out vec4 fragColor;
+out vec2 UV;
 
 out gl_PerVertex{
 	vec4 gl_Position;
 };
 
 void main() {
+	UV = texCoord;
     gl_Position = mvp * vec4(pos, 1.0);
-	fragColor = vec4(0.7, 0.7, 0.7, 1.0);
 }

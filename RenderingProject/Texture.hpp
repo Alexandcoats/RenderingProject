@@ -19,6 +19,6 @@ public:
 
 	void bind();
 
-	void push(unsigned char * pixels, int width, int height);
+	void push(unsigned char * pixels, int width, int height, int channels);
 };
 
