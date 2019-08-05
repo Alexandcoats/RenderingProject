@@ -56,7 +56,7 @@ void MeshObject::createBuffers(std::vector<Vertex> vertexData, std::vector<unsig
 	//create index buffer
 	createIndexBuffer(&bufferIDs[1], indexData.size() * sizeof(unsigned int), indexData.data());
 
-	vao->writeVertexAttribute(locations[0], 3, sizeof(glm::vec2), (void*)0);
+	vao->writeVertexAttribute(locations[0], 3, sizeof(Vertex), (void*)0);
 
 	/*
 
@@ -71,7 +71,7 @@ void MeshObject::createBuffers(std::vector<Vertex> vertexData, std::vector<unsig
 
 	if (locations[2] != -1)
 	{
-		vao->writeVertexAttribute(locations[2], sizeof(glm::vec3), 0, (void*)0);
+		vao->writeVertexAttribute(locations[2], 2, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
 	}
 
 
@@ -107,7 +107,7 @@ void MeshObject::readOBJ(std::string filepath) {
 			};
 			vertex.texCoord = {
 				attrib.texcoords[2 * index.texcoord_index + 0],
-				attrib.texcoords[2 * index.texcoord_index + 1]
+				1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 			};
 
 			if (uniqueVertices.count(vertex) == 0) {
