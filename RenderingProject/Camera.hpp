@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/norm.hpp>
 
 #define FORWARD glm::normalize(dir)
 #define BACKWARD glm::normalize(-dir)
@@ -83,5 +84,9 @@ public:
 			break;
 		}
 		update();
+	}
+
+	float uAxisAngle() {
+		return glm::acos(glm::dot(glm::normalize(up), glm::normalize(dir)) / (glm::l1Norm(glm::normalize(up)) * glm::l1Norm(glm::normalize(dir))));
 	}
 };

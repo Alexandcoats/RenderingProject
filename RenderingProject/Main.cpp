@@ -9,7 +9,7 @@
 #include "MeshObject.hpp"
 #include "Camera.hpp"
 
-static const float WALK_SPEED = 0.05f, SPRINT_SPEED = 0.5f, CAMERA_SPEED = 0.001f;
+static const float WALK_SPEED = 0.05f, SPRINT_SPEED = 0.5f, CAMERA_SPEED = 0.002f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -184,7 +184,10 @@ public:
 		Application * app = reinterpret_cast<Application*>(glfwGetWindowUserPointer(window));
 
 		app->camera->rotate(Axis::V, CAMERA_SPEED*app->speedModifier*(app->cursorPos[0] - xpos));
-		app->camera->rotate(Axis::U, CAMERA_SPEED*app->speedModifier*(app->cursorPos[1] - ypos));
+		float angle = app->camera->uAxisAngle();
+		float yDelta = app->cursorPos[1] - ypos;
+		if((angle > 0.1f && yDelta > 0) || (glm::pi<float>() - angle > 0.1f && yDelta < 0)) // This works okay unless you move the camera really fast, but whatevs
+			app->camera->rotate(Axis::U, CAMERA_SPEED*app->speedModifier*(yDelta));
 
 		app->cursorPos[0] = xpos;
 		app->cursorPos[1] = ypos;
