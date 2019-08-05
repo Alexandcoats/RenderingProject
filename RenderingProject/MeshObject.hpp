@@ -8,6 +8,7 @@
 #include "VertexArrayObject.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
+#include "Texture.hpp"
 
 /*
   Resource type for loading vertex geometry data.
@@ -45,6 +46,8 @@ class MeshObject
 public:
 	unsigned int bufferIDs[2];
 	int locations[3];
+
+	Texture * texture;
 
 	VertexArrayObject * vao;
 

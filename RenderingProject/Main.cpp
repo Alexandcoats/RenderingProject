@@ -143,6 +143,7 @@ public:
 		test.push(pixels, width, height, channels);
 
 		MeshObject mesh{ "./models/chalet.obj", pipeline->map["pos"][1], -1, pipeline->map["texCoord"][1] };
+		mesh.texture = &test;
 
 		pipeline->meshes.push_back(mesh);
 	}

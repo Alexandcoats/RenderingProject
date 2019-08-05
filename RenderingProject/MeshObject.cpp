@@ -25,6 +25,7 @@ MeshObject::MeshObject(std::string filepath, int vertexLocation, int normalLocat
 }
 
 void MeshObject::draw() {
+	texture->draw();
 	vao->bind();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
 	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
@@ -56,18 +57,12 @@ void MeshObject::createBuffers(std::vector<Vertex> vertexData, std::vector<unsig
 	//create index buffer
 	createIndexBuffer(&bufferIDs[1], indexData.size() * sizeof(unsigned int), indexData.data());
 
-	vao->writeVertexAttribute(locations[0], 3, sizeof(Vertex), (void*)0);
+	vao->writeVertexAttribute(locations[0], 3, sizeof(Vertex), (void*)offsetof(Vertex, pos));
 
-	/*
-
-	if (locations[1] != -1 && !normalData.empty())
+	if (locations[1] != -1)
 	{
-		//create normal buffer
-		createBuffer(&bufferIDs[1], normalData.size() * sizeof(float), &normalData.front());
-		vao->writeVertexAttribute(locations[1], 3, 0, (void*)0);
+		vao->writeVertexAttribute(locations[1], 3, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 	}
-
-	*/
 
 	if (locations[2] != -1)
 	{

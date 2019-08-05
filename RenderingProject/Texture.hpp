@@ -19,6 +19,8 @@ public:
 
 	void bind();
 
+	void draw();
+
 	void push(unsigned char * pixels, int width, int height, int channels);
 };
 
