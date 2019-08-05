@@ -9,7 +9,7 @@
 #include "MeshObject.hpp"
 #include "Camera.hpp"
 
-static const float WALK_SPEED = 0.5f, SPRINT_SPEED = 1.0f, CAMERA_SPEED = 0.001f;
+static const float WALK_SPEED = 0.05f, SPRINT_SPEED = 0.5f, CAMERA_SPEED = 0.001f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -156,6 +156,7 @@ public:
 
 		glfwSetKeyCallback(window, handleKeyInput);
 		glfwSetCursorPosCallback(window, handleCursorInput);
+		glfwSetMouseButtonCallback(window, handleMouseInput);
 	}
 
 	static void onWindowError(int error, const char* description)
@@ -195,9 +196,23 @@ public:
 
 		if (action == GLFW_PRESS) {
 			app->keyboardState[key] = true;
+			if (app->keyboardState[GLFW_KEY_ESCAPE] && glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED) {
+				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				glfwSetCursorPosCallback(window, nullptr);
+				glfwSetKeyCallback(window, nullptr);
+			}
 		}
 		else if (action == GLFW_RELEASE) {
 			app->keyboardState[key] = false;
+		}
+	}
+
+	static void handleMouseInput(GLFWwindow* window, int button, int action, int mods)
+	{
+		if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS && glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL) {
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetCursorPosCallback(window, handleCursorInput);
+			glfwSetKeyCallback(window, handleKeyInput);
 		}
 	}
 };
