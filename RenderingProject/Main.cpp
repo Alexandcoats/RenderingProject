@@ -8,6 +8,7 @@
 #include "Texture.hpp"
 #include "MeshObject.hpp"
 #include "Camera.hpp"
+#include "TilesetReader.hpp"
 
 static const float WALK_SPEED = 0.05f, SPRINT_SPEED = 0.5f, CAMERA_SPEED = 0.002f;
 
@@ -27,7 +28,7 @@ public:
 	void run() {
 		width = INIT_WIDTH;
 		height = INIT_HEIGHT;
-		//map.initMap("./textures/pieces2.png");
+		map.initMap("./textures/pieces2.png");
 		//map.saveMap("./textures/output.png");
 		
 		initWindow();
@@ -50,10 +51,7 @@ public:
 
 			pipeline->use();
 
-			// This will need to move into the mesh objects as they will all have individual model matrices
-			glUniformMatrix4fv(pipeline->map["mvp"][1], 1, GL_FALSE, &(camera->projection*camera->view)[0][0]);
-
-			pipeline->draw();
+			pipeline->draw(camera->projection*camera->view, map.map);
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();
@@ -142,10 +140,11 @@ public:
 		unsigned char * pixels = stbi_load("./textures/chalet.jpg", &width, &height, &channels, 4);
 		test.push(pixels, width, height, channels);
 
-		MeshObject mesh{ "./models/chalet.obj", pipeline->map["pos"][1], -1, pipeline->map["texCoord"][1] };
-		mesh.texture = &test;
-
-		pipeline->meshes.push_back(mesh);
+		pipeline->meshes = readOBJ("./models/tileset.obj", pipeline->map["pos"][1], -1, pipeline->map["texCoord"][1]);
+		// Need to go through and set textures on these meshes
+		for (auto & mesh : pipeline->meshes) {
+			mesh->texture = &test;
+		}
 	}
 
 	void initInput() {

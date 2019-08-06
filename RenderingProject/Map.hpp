@@ -14,6 +14,13 @@ public:
 
 	void initMap(const char * filename);
 	void saveMap(const char * filename);
+
+	struct MinimalPiece {
+		int pieceInd;
+		int flp = 0;
+		int rot = 0;
+	};
+
 private:
 	int imgWidth, imgHeight, channels;
 	unsigned char * tileImageData;
@@ -36,16 +43,13 @@ private:
 		}
 	};
 
-	struct Piece {
+	struct Piece : MinimalPiece {
 		const static int pieceSize = 11;
 		unsigned char * imageData;
-		int pieceInd;
 		bool xsymm = true;
 		bool ysymm = true;
 		bool xysymm = true;
 		bool yxsymm = true;
-		int flp = 0;
-		int rot = 0;
 		enum Side { empty /* empty connector */, red, blue, left_green, right_green, wall /* edge of map */, null /* missing tile */ };
 		Side sides[4];
 
@@ -63,8 +67,9 @@ private:
 		Side getSide(int side);
 	};
 
-	std::vector<std::vector<Piece*>> map;
-
 	void createMap();
+
+public:
+	std::vector<std::vector<MinimalPiece*>> map;
 };
 

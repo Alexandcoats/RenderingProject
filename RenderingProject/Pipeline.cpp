@@ -1,4 +1,5 @@
 #include "Pipeline.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 Pipeline::Pipeline() : ID(glCreateProgram()) {}
 
@@ -66,13 +67,26 @@ void Pipeline::attachShader(const Shader * shader) {
 	glAttachShader(ID, shader->ID);
 }
 
-void Pipeline::draw() {
-	// Call draw method on mesh?
-	// Maybe do nothing here?
-	//glDrawElements(GL_TRIANGLES, geometry.indices.size(), GL_UNSIGNED_SHORT, (void*)0);
-	for (auto mesh : meshes) {
-		mesh.draw();
+void Pipeline::draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> pieces) {
+	for (int i = 0; i < pieces.size(); ++i) {
+		for (int j = 0; j < pieces[0].size(); ++j) {
+			if (pieces[i][j]) {
+				glm::mat4 mvp = vp * glm::translate(
+										glm::rotate(
+											glm::scale(
+												glm::mat4(), 
+												glm::vec3(1.0f, -1.0f, 1.0f * pieces[i][j]->flp)),
+											(glm::pi<float>() / 2.0f) * pieces[i][j]->rot,
+											glm::vec3(0.0f, 0.0f, 1.0f)), 
+										glm::vec3((float)i * 2.0f, (float)j * 2.0f, 0.0f));
+				glUniformMatrix4fv(map["mvp"][1], 1, GL_FALSE, &mvp[0][0]);
+				meshes[pieces[i][j]->pieceInd - 1]->draw();
+			}
+		}
 	}
+	//for (auto mesh : meshes) {
+	//	mesh.draw();
+	//}
 }
 
 #ifndef NDEBUG

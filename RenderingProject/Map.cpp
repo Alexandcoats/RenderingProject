@@ -23,7 +23,7 @@ void Map::saveMap(const char * filename) {
 			mapy = (i / (tileSize * tileSize * mapSize)), 
 			piecex = (i % tileSize), 
 			piecey = (i / (tileSize * mapSize) % tileSize ) ) {
-		Pixel p = map[mapy][mapx]->imageIndex(piecex, piecey);
+		Pixel p = ((Piece *)map[mapy][mapx])->imageIndex(piecex, piecey);
 		imageData[i*3] = p.r;
 		imageData[i*3+1] = p.g;
 		imageData[i*3+2] = p.b;
@@ -42,7 +42,7 @@ void Map::createMap() {
 			map[i].push_back(nullptr);
 		}
 	}
-	map[(int)(mapSize / 2)][(int)(mapSize / 2)] = new Piece(0,tileImageData);
+	map[(int)(mapSize / 2)][(int)(mapSize / 2)] = new Piece(1,tileImageData);
 	std::vector<std::tuple<int,int,double>> allIndexes;
 	for (int x = 0; x < mapSize; ++x) {
 		for (int y = 0; y < mapSize; ++y) {
@@ -60,7 +60,7 @@ void Map::createMap() {
 				connectors[s] = Piece::Side::wall;
 				continue;
 			}
-			Piece * neighbor = map[y + j][x + i];
+			Piece * neighbor = (Piece *)map[y + j][x + i];
 			if (neighbor == nullptr) connectors[s] = Piece::Side::null;
 			else connectors[s] = neighbor->getSide((s + 2) % 4);
 		}
@@ -107,11 +107,11 @@ void Map::createMap() {
 		for (auto list : std::vector<std::vector<int>>{ { 0,-1,0 },{ 1,0,1 },{ 2,1,0 },{ 3,0,-1 } }) {
 			int s = list[0], j = list[1], i = list[2];
 			if (y + j < 0 || x + i >= mapSize || y + j >= mapSize || x + i < 0) continue;
-			Piece * neighbor = map[y + j][x + i];
+			Piece * neighbor = (Piece *)map[y + j][x + i];
 			if (std::find(keepList.begin(), keepList.end(), pair{ x + i, y + j }) != keepList.end()) continue;
 			if (neighbor == nullptr) continue;
 			else {
-				if (map[y][x]->getSide(s) == Piece::Side::empty) continue;
+				if (((Piece*)map[y][x])->getSide(s) == Piece::Side::empty) continue;
 				keepList.push_back(pair{ x + i, y + j });
 			}
 		}

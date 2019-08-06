@@ -7,13 +7,14 @@
 #include "VertexArrayObject.hpp"
 #include <vector>
 #include "MeshObject.hpp"
+#include "Map.hpp"
 
 class Pipeline
 {
 public:
 	unsigned int ID;
 	std::map<std::string, std::vector<int>> map;
-	std::vector<MeshObject> meshes;
+	std::vector<std::unique_ptr<MeshObject>> meshes;
 
 	Pipeline();
 
@@ -34,7 +35,7 @@ public:
 
 	void getAttributeData();
 
-	void draw();
+	void draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> map);
 
 #ifndef NDEBUG
 	void checkForErrors();
