@@ -27,6 +27,8 @@ std::vector<std::unique_ptr<MeshObject>> readOBJ(std::string filepath, int verte
 
 	std::vector<std::unique_ptr<MeshObject>> meshes;
 
+	std::sort(shapes.begin(), shapes.end(), [](tinyobj::shape_t a, tinyobj::shape_t b) { return a.name < b.name;  });
+
 	for (const auto & shape : shapes) {
 
 		std::vector<Vertex> vertices;

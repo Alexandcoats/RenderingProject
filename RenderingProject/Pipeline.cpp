@@ -42,8 +42,7 @@ void Pipeline::getAttributeData() {
 	std::vector<int> values(properties.size());
 	for (int attrib = 0; attrib < numActiveAttribs; ++attrib)
 	{
-		glGetProgramResourceiv(ID, GL_PROGRAM_INPUT, attrib, properties.size(),
-			&properties[0], values.size(), NULL, &values[0]);
+		glGetProgramResourceiv(ID, GL_PROGRAM_INPUT, attrib, properties.size(), &properties[0], values.size(), NULL, &values[0]);
 
 		nameData.resize(values[0]); //The length of the name.
 		glGetProgramResourceName(ID, GL_PROGRAM_INPUT, attrib, nameData.size(), NULL, &nameData[0]);
@@ -53,8 +52,7 @@ void Pipeline::getAttributeData() {
 
 	for (int uniform = 0; uniform < numActiveUniforms; ++uniform)
 	{
-		glGetProgramResourceiv(ID, GL_UNIFORM, uniform, properties.size(),
-			&properties[0], values.size(), NULL, &values[0]);
+		glGetProgramResourceiv(ID, GL_UNIFORM, uniform, properties.size(), &properties[0], values.size(), NULL, &values[0]);
 
 		nameData.resize(values[0]); //The length of the name.
 		glGetProgramResourceName(ID, GL_UNIFORM, uniform, nameData.size(), NULL, &nameData[0]);
@@ -70,23 +68,16 @@ void Pipeline::attachShader(const Shader * shader) {
 void Pipeline::draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> pieces) {
 	for (int i = 0; i < pieces.size(); ++i) {
 		for (int j = 0; j < pieces[0].size(); ++j) {
-			if (pieces[i][j]) {
-				glm::mat4 mvp = vp * glm::translate(
-										glm::rotate(
-											glm::scale(
-												glm::mat4(), 
-												glm::vec3(1.0f, -1.0f, 1.0f * pieces[i][j]->flp)),
-											(glm::pi<float>() / 2.0f) * pieces[i][j]->rot,
-											glm::vec3(0.0f, 0.0f, 1.0f)), 
-										glm::vec3((float)i * 2.0f, (float)j * 2.0f, 0.0f));
+			if (pieces[i][j]->pieceInd) {
+				glm::mat4 flip = glm::scale(glm::mat4(), glm::vec3(pieces[i][j]->flp ? -1.0f : 1.0f, 1.0f, 1.0f));
+				glm::mat4 rotate = glm::rotate(glm::mat4(), (glm::pi<float>() / 2.0f) * pieces[i][j]->rot, glm::vec3(0.0f, 1.0f, 0.0f));
+				glm::mat4 translate = glm::translate(glm::mat4(), glm::vec3((float)j * 20.0f, 0.0f, (float)i * 20.0f));
+				glm::mat4 mvp = vp * translate * rotate * flip;
 				glUniformMatrix4fv(map["mvp"][1], 1, GL_FALSE, &mvp[0][0]);
 				meshes[pieces[i][j]->pieceInd - 1]->draw();
 			}
 		}
 	}
-	//for (auto mesh : meshes) {
-	//	mesh.draw();
-	//}
 }
 
 #ifndef NDEBUG

@@ -118,7 +118,7 @@ void Map::createMap() {
 	}
 	for (int x = 0; x < mapSize; ++x) {
 		for (int y = 0; y < mapSize; ++y) {
-			if (std::find(keepList.begin(), keepList.end(), pair{ x, y }) == keepList.end()) map[y][x] = new Piece(pieces[1]);
+			if (std::find(keepList.begin(), keepList.end(), pair{ x, y }) == keepList.end()) map[y][x] = new Piece(pieces[0]);
 		}
 	}
 }

@@ -10,7 +10,7 @@
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
 
-static const float WALK_SPEED = 0.05f, SPRINT_SPEED = 0.5f, CAMERA_SPEED = 0.002f;
+static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -29,7 +29,7 @@ public:
 		width = INIT_WIDTH;
 		height = INIT_HEIGHT;
 		map.initMap("./textures/pieces2.png");
-		//map.saveMap("./textures/output.png");
+		map.saveMap("./textures/output.png");
 		
 		initWindow();
 		initInput();
@@ -50,6 +50,9 @@ public:
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			pipeline->use();
+
+			glUniform3fv(pipeline->map["lightPos"][1], 1, &glm::vec3(10.0f, 10.0f, 10.0f)[0]);
+			glUniform3fv(pipeline->map["camPos"][1], 1, &camera->pos[0]);
 
 			pipeline->draw(camera->projection*camera->view, map.map);
 
@@ -125,7 +128,7 @@ public:
 		glEnable(GL_DEPTH_TEST);
 		//glEnable(GL_CULL_FACE);
 
-		camera = new Camera(width, height, glm::vec3(-5.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		camera = new Camera(width, height, glm::vec3(-5.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
 	void initPipeline() {
@@ -140,7 +143,7 @@ public:
 		unsigned char * pixels = stbi_load("./textures/chalet.jpg", &width, &height, &channels, 4);
 		test.push(pixels, width, height, channels);
 
-		pipeline->meshes = readOBJ("./models/tileset.obj", pipeline->map["pos"][1], -1, pipeline->map["texCoord"][1]);
+		pipeline->meshes = readOBJ("./models/tileset.obj", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1]);
 		// Need to go through and set textures on these meshes
 		for (auto & mesh : pipeline->meshes) {
 			mesh->texture = &test;
