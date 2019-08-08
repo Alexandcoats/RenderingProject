@@ -10,7 +10,7 @@
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
 
-static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
+static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, FLY_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
 
 class Application {
 	const int INIT_WIDTH = 800, INIT_HEIGHT = 600;
@@ -23,6 +23,8 @@ class Application {
 	bool keyboardState[GLFW_KEY_LAST] = { false };
 	float speedModifier = 1.0f;
 	double cursorPos[2];
+
+	bool walkMode = false;
 
 public:
 	void run() {
@@ -66,15 +68,20 @@ public:
 			// Handle camera stuff
 			// We should move this somewhere better maybe
 			float speed;
-			if (keyboardState[GLFW_KEY_LEFT_SHIFT])
-				speed = SPRINT_SPEED;
-			else
-				speed = WALK_SPEED;
+			if (walkMode) {
+				if (keyboardState[GLFW_KEY_LEFT_SHIFT])
+					speed = SPRINT_SPEED;
+				else
+					speed = WALK_SPEED;
+			}
+			else speed = FLY_SPEED;
 			if (keyboardState[GLFW_KEY_W]) {
-				camera->translate(Direction::Forward, speed*speedModifier);
+				if (walkMode) camera->translate(Direction::WalkForward, speed*speedModifier);
+				else camera->translate(Direction::Forward, speed*speedModifier);
 			}
 			if (keyboardState[GLFW_KEY_S]) {
-				camera->translate(Direction::Backward, speed*speedModifier);
+				if (walkMode) camera->translate(Direction::WalkBackward, speed*speedModifier);
+				else camera->translate(Direction::Backward, speed*speedModifier);
 			}
 			if (keyboardState[GLFW_KEY_A]) {
 				camera->translate(Direction::Left, speed*speedModifier);
@@ -206,6 +213,10 @@ public:
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				glfwSetCursorPosCallback(window, nullptr);
 				glfwSetKeyCallback(window, nullptr);
+			}
+			else if (app->keyboardState[GLFW_KEY_G]) {
+				app->walkMode = !app->walkMode;
+				if (app->walkMode) app->camera->pos = glm::vec3(0.0f, 1.0f, 0.0f);
 			}
 		}
 		else if (action == GLFW_RELEASE) {

@@ -9,6 +9,8 @@
 #define BACKWARD glm::normalize(-dir)
 #define LEFT glm::normalize(glm::cross(up, dir))
 #define RIGHT glm::normalize(glm::cross(dir, up))
+#define WALK_FORWARD glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+#define WALK_BACKWARD glm::normalize(glm::vec3(-dir.x, 0.0f, -dir.z));
 
 #define UAXIS glm::cross(dir, up)
 #define VAXIS up
@@ -17,6 +19,8 @@
 enum Direction {
 	Forward,
 	Backward,
+	WalkForward,
+	WalkBackward,
 	Left,
 	Right
 };
@@ -65,6 +69,12 @@ public:
 			break;
 		case Right:
 			pos += magnitude * RIGHT;
+			break;
+		case WalkForward:
+			pos += magnitude * WALK_FORWARD;
+			break;
+		case WalkBackward:
+			pos += magnitude * WALK_BACKWARD;
 			break;
 		}
 		update();
