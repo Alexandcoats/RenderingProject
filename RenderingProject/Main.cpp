@@ -150,23 +150,15 @@ public:
 		int height, width, channels;
 		unsigned char * pixels;
 
-		auto tex0 = std::make_unique<Texture>(pipeline->map["texSampler"][1], 0);
-		pixels = stbi_load("./textures/FloorTexture_d.png", &width, &height, &channels, 4);
-		tex0->push(pixels, width, height, channels);
-
-		auto tex1 = std::make_unique<Texture>(pipeline->map["texSampler"][1], 1);
-		pixels = stbi_load("./textures/tile1_d.png", &width, &height, &channels, 4);
-		tex1->push(pixels, width, height, channels);
-
-		auto tex2 = std::make_unique<Texture>(pipeline->map["texSampler"][1], 2);
-		pixels = stbi_load("./textures/tile2_d.png", &width, &height, &channels, 4);
-		tex2->push(pixels, width, height, channels);
+		auto tiletex = std::make_unique<Texture>(pipeline->map["texSampler"][1], 0);
+		pixels = stbi_load("./textures/alltiles_d.png", &width, &height, &channels, 4);
+		tiletex->push(pixels, width, height, channels);
 
 		pipeline->meshes = readOBJ("./models/tileset.obj", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1]);
 
-		pipeline->meshes[0]->texture = std::move(tex0);
-		pipeline->meshes[1]->texture = std::move(tex1);
-		pipeline->meshes[2]->texture = std::move(tex2);
+		for (const auto & mesh : pipeline->meshes) {
+			mesh->texture = std::move(tiletex);
+		}
 	}
 
 	void initInput() {
