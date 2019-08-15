@@ -53,8 +53,10 @@ public:
 
 			pipeline->use();
 
-			glUniform3fv(pipeline->map["lightPos"][1], 1, &glm::vec3(10.0f, 10.0f, 10.0f)[0]);
-			glUniform3fv(pipeline->map["camPos"][1], 1, &camera->pos[0]);
+			if (pipeline->map.count("lightPos") && pipeline->map.count("camPos")) {
+				glUniform3fv(pipeline->map["lightPos"][1], 1, &glm::vec3(10.0f, 10.0f, 10.0f)[0]);
+				glUniform3fv(pipeline->map["camPos"][1], 1, &camera->pos[0]);
+			}
 
 			pipeline->draw(camera->projection*camera->view, map.map);
 
@@ -145,16 +147,26 @@ public:
 		pipeline = new Pipeline{ &VertShader, &FragShader };
 		pipeline->use();
 
-		Texture test(pipeline->map["texSampler"][1], 0);
 		int height, width, channels;
-		unsigned char * pixels = stbi_load("./textures/chalet.jpg", &width, &height, &channels, 4);
-		test.push(pixels, width, height, channels);
+		unsigned char * pixels;
+
+		auto tex0 = std::make_unique<Texture>(pipeline->map["texSampler"][1], 0);
+		pixels = stbi_load("./textures/FloorTexture_d.png", &width, &height, &channels, 4);
+		tex0->push(pixels, width, height, channels);
+
+		auto tex1 = std::make_unique<Texture>(pipeline->map["texSampler"][1], 1);
+		pixels = stbi_load("./textures/tile1_d.png", &width, &height, &channels, 4);
+		tex1->push(pixels, width, height, channels);
+
+		auto tex2 = std::make_unique<Texture>(pipeline->map["texSampler"][1], 2);
+		pixels = stbi_load("./textures/tile2_d.png", &width, &height, &channels, 4);
+		tex2->push(pixels, width, height, channels);
 
 		pipeline->meshes = readOBJ("./models/tileset.obj", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1]);
-		// Need to go through and set textures on these meshes
-		for (auto & mesh : pipeline->meshes) {
-			mesh->texture = &test;
-		}
+
+		pipeline->meshes[0]->texture = std::move(tex0);
+		pipeline->meshes[1]->texture = std::move(tex1);
+		pipeline->meshes[2]->texture = std::move(tex2);
 	}
 
 	void initInput() {
@@ -216,7 +228,7 @@ public:
 			}
 			else if (app->keyboardState[GLFW_KEY_G]) {
 				app->walkMode = !app->walkMode;
-				if (app->walkMode) app->camera->pos = glm::vec3(0.0f, 1.0f, 0.0f);
+				if (app->walkMode) app->camera->pos = glm::vec3(0.0f, 3.0f, 0.0f);
 			}
 		}
 		else if (action == GLFW_RELEASE) {

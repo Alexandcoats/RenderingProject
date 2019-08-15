@@ -11,7 +11,7 @@ MeshObject::MeshObject(const int locations[3], std::vector<Vertex> vertexData, s
 }
 
 void MeshObject::draw() {
-	texture->draw();
+	if(texture) texture->draw();
 	vao->bind();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
 	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);

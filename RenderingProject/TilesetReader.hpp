@@ -5,6 +5,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include <vector>
+#include <memory>
 
 std::vector<std::unique_ptr<MeshObject>> readOBJ(std::string filepath, int vertexLocation, int normalLocation, int uvLocation) {
 

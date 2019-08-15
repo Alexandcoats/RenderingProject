@@ -10,10 +10,10 @@ in vec2 UV;
 
 out vec4 outColor;
 
-vec3 ambientColor = vec3(0.0, .8, 0.0);
-vec3 diffuseColor = vec3(0.0, 1.0, 0.0);
+vec3 ambientColor = vec3(0.0, 0.0, 0.0);
+vec3 diffuseColor = vec3(1.0, 1.0, 1.0);
 vec3 specColor = vec3(1.0, 1.0, 1.0);
-float shininess = 50.0;
+float shininess = 10.0;
 
 vec4 blinnphong(){
     vec3 P = worldPos;
@@ -31,6 +31,6 @@ vec4 blinnphong(){
 }
 
 void main() {
-    texture(texSampler, UV); // This is here so it doesn't compile out the texture and explode
-	outColor = blinnphong();
+	//outColor = blinnphong();
+    outColor = texture(texSampler, UV);
 }

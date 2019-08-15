@@ -7,6 +7,7 @@
 #include "VertexArrayObject.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
+#include <memory>
 #include "Texture.hpp"
 
 struct Vertex {
@@ -35,7 +36,7 @@ public:
 	unsigned int bufferIDs[2];
 	int locations[3];
 
-	Texture * texture;
+	std::unique_ptr<Texture> texture;
 
 	glm::vec3 pos;
 
