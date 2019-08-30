@@ -6,8 +6,9 @@
 #include <tiny_obj_loader.h>
 #include <vector>
 #include <memory>
+#include "json.hpp"
 
-std::vector<std::unique_ptr<MeshObject>> readOBJ(std::string filepath, int vertexLocation, int normalLocation, int uvLocation) {
+void readOBJ(std::string filepath, std::string metadataPath, int vertexLocation, int normalLocation, int uvLocation, std::vector<std::unique_ptr<MeshObject>> & tiles, std::vector<std::unique_ptr<MeshObject>> & meshes) {
 
 	std::string extension = filepath.substr(filepath.size() - 4, 4);
 
@@ -26,9 +27,14 @@ std::vector<std::unique_ptr<MeshObject>> readOBJ(std::string filepath, int verte
 	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, filepath.c_str()))
 		throw std::runtime_error(warn + err);
 
-	std::vector<std::unique_ptr<MeshObject>> meshes;
-
 	std::sort(shapes.begin(), shapes.end(), [](tinyobj::shape_t a, tinyobj::shape_t b) { return a.name < b.name;  });
+
+	using json = nlohmann::json;
+
+	// read a JSON file
+	std::ifstream metadata(metadataPath);
+	json j;
+	metadata >> j;
 
 	for (const auto & shape : shapes) {
 
@@ -36,6 +42,8 @@ std::vector<std::unique_ptr<MeshObject>> readOBJ(std::string filepath, int verte
 		std::vector<unsigned int> indices;
 
 		std::unordered_map<Vertex, unsigned int> uniqueVertices = {};
+
+		std::vector<float> location = j.at(shape.name).at("location");
 
 		for (const auto & index : shape.mesh.indices) {
 			Vertex vertex = {};
@@ -67,8 +75,9 @@ std::vector<std::unique_ptr<MeshObject>> readOBJ(std::string filepath, int verte
 			indices.push_back(uniqueVertices[vertex]);
 		}
 
-		meshes.push_back(std::move(std::make_unique<MeshObject>(locations, vertices, indices)));
+		if(shape.name.substr(0,4) == "tile") 
+			tiles.push_back(std::move(std::make_unique<MeshObject>(locations, vertices, indices)));
+		else 
+			meshes.push_back(std::move(std::make_unique<MeshObject>(locations, vertices, indices)));
 	}
-
-	return meshes;
 }

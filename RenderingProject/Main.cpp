@@ -154,10 +154,10 @@ public:
 		pixels = stbi_load("./textures/alltiles_d.png", &width, &height, &channels, 4);
 		tiletex->push(pixels, width, height, channels);
 
-		pipeline->meshes = readOBJ("./models/tileset.obj", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1]);
+		readOBJ("./models/tileset.obj", "./models/metadata.json", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1], pipeline->tiles, pipeline->meshes);
 
-		for (const auto & mesh : pipeline->meshes) {
-			mesh->texture = std::move(tiletex);
+		for (const auto & tile : pipeline->tiles) {
+			tile->texture = std::move(tiletex);
 		}
 	}
 

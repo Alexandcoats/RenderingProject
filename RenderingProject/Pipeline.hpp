@@ -14,6 +14,7 @@ class Pipeline
 public:
 	unsigned int ID;
 	std::map<std::string, std::vector<int>> map;
+	std::vector<std::unique_ptr<MeshObject>> tiles;
 	std::vector<std::unique_ptr<MeshObject>> meshes;
 
 	Pipeline();

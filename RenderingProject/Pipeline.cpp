@@ -74,7 +74,7 @@ void Pipeline::draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> 
 				glm::mat4 translate = glm::translate(glm::mat4(), glm::vec3((float)j * 20.0f, 0.0f, (float)i * 20.0f));
 				glm::mat4 mvp = vp * translate * rotate * flip;
 				glUniformMatrix4fv(map["mvp"][1], 1, GL_FALSE, &mvp[0][0]);
-				meshes[pieces[i][j]->pieceInd - 1]->draw();
+				tiles[pieces[i][j]->pieceInd - 1]->draw();
 			}
 		}
 	}
