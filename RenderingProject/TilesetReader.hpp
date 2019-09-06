@@ -88,9 +88,17 @@ void readOBJ(std::string filepath, std::string metadataPath, int vertexLocation,
 		if (e.key().substr(0, 4) == "tile" && e.key().substr(5, 1) == "_") {
 			// We can get the reference shape from the name, but it may be better to include this in the metadata
 			std::string refShape = e.key().substr(6,e.key().length() - 7);
-			std::vector<float> location = e.value()["location"];
-			int index = std::stoi(e.key().substr(4, 1));
-			tiles[index].subMeshes.push_back(SubMesh{ meshes[refShape], glm::vec3(location[0] - tiles[index].location.x, location[2] - tiles[index].location.y, location[1] - tiles[index].location.z) });
+			if (meshes.count(refShape) > 0) {
+				std::vector<float> location = e.value()["location"];
+				std::vector<float> refRotation = j[refShape]["rotation"];
+				std::vector<float> rotation = e.value()["rotation"];
+				int index = std::stoi(e.key().substr(4, 1));
+				tiles[index].subMeshes.push_back(SubMesh{
+					meshes[refShape],
+					glm::vec3(location[0] - tiles[index].location.x, location[2] - tiles[index].location.y, location[1] - tiles[index].location.z),
+					glm::vec3(rotation[0], rotation[2], rotation[1])
+					});
+			}
 		}
 	}
 }

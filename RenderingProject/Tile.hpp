@@ -5,12 +5,13 @@
 class SubMesh {
 public:
 	glm::vec3 location;
+	glm::vec3 rotation;
 	std::shared_ptr<MeshObject> tileMesh;
 
-	SubMesh(std::shared_ptr<MeshObject> mesh, glm::vec3 location) : tileMesh(mesh), location(location) {}
+	SubMesh(std::shared_ptr<MeshObject> mesh, glm::vec3 location, glm::vec3 rotation) : tileMesh(mesh), location(location), rotation(rotation) {}
 
 	void draw(glm::mat4 tileMvp, int mvpLoc) const {
-		glm::mat4 mvp = tileMvp * glm::translate(glm::mat4(), location);
+		glm::mat4 mvp = tileMvp * glm::translate(glm::mat4(), location) * glm::rotate(glm::mat4(), rotation.x, glm::vec3(1.0f, 0.0f, 0.0f)) * glm::rotate(glm::mat4(), rotation.y, glm::vec3(0.0f, 1.0f, 0.0f)) * glm::rotate(glm::mat4(), rotation.z, glm::vec3(0.0f, 0.0f, 1.0f));
 		glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, &mvp[0][0]);
 		tileMesh->draw();
 	}
