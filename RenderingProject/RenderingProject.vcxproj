@@ -38,6 +38,7 @@
     <ClInclude Include="Pipeline.hpp" />
     <ClInclude Include="Shader.hpp" />
     <ClInclude Include="Texture.hpp" />
+    <ClInclude Include="Tile.hpp" />
     <ClInclude Include="TilesetReader.hpp" />
     <ClInclude Include="VertexArrayObject.hpp" />
   </ItemGroup>

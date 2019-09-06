@@ -36,7 +36,7 @@ public:
 	unsigned int bufferIDs[2];
 	int locations[3];
 
-	std::unique_ptr<Texture> texture;
+	std::shared_ptr<Texture> texture;
 
 	glm::vec3 pos;
 

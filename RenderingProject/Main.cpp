@@ -150,14 +150,22 @@ public:
 		int height, width, channels;
 		unsigned char * pixels;
 
-		auto tiletex = std::make_unique<Texture>(pipeline->map["texSampler"][1], 0);
+		auto tiletex = std::make_shared<Texture>(pipeline->map["texSampler"][1], 0);
 		pixels = stbi_load("./textures/alltiles_d.png", &width, &height, &channels, 4);
 		tiletex->push(pixels, width, height, channels);
 
-		readOBJ("./models/tileset.obj", "./models/metadata.json", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1], pipeline->tiles, pipeline->meshes);
+		auto sconcetex = std::make_shared<Texture>(pipeline->map["texSampler"][1], 1);
+		pixels = stbi_load("./textures/sconce.png", &width, &height, &channels, 4);
+		sconcetex->push(pixels, width, height, channels);
+
+		readOBJ("./models/tileset.obj", "./models/metadata.json", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1], pipeline->tiles);
 
 		for (const auto & tile : pipeline->tiles) {
-			tile->texture = std::move(tiletex);
+			tile.tileMesh->texture = tiletex;
+			for (const auto & submesh : tile.subMeshes) {
+				// Obvously temporary
+				submesh.tileMesh->texture = sconcetex;
+			}
 		}
 	}
 

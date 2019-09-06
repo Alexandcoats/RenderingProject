@@ -1,5 +1,4 @@
 #include "Pipeline.hpp"
-#include <glm/gtc/matrix_transform.hpp>
 
 Pipeline::Pipeline() : ID(glCreateProgram()) {}
 
@@ -69,12 +68,7 @@ void Pipeline::draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> 
 	for (int i = 0; i < pieces.size(); ++i) {
 		for (int j = 0; j < pieces[0].size(); ++j) {
 			if (pieces[i][j]->pieceInd) {
-				glm::mat4 flip = glm::scale(glm::mat4(), glm::vec3(pieces[i][j]->flp ? -1.0f : 1.0f, 1.0f, 1.0f));
-				glm::mat4 rotate = glm::rotate(glm::mat4(), (glm::pi<float>() / 2.0f) * pieces[i][j]->rot, glm::vec3(0.0f, 1.0f, 0.0f));
-				glm::mat4 translate = glm::translate(glm::mat4(), glm::vec3((float)j * 20.0f, 0.0f, (float)i * 20.0f));
-				glm::mat4 mvp = vp * translate * rotate * flip;
-				glUniformMatrix4fv(map["mvp"][1], 1, GL_FALSE, &mvp[0][0]);
-				tiles[pieces[i][j]->pieceInd - 1]->draw();
+				tiles[pieces[i][j]->pieceInd - 1].draw(vp, pieces[i][j], map["mvp"][1], j, i);
 			}
 		}
 	}

@@ -8,14 +8,14 @@
 #include <vector>
 #include "MeshObject.hpp"
 #include "Map.hpp"
+#include "Tile.hpp"
 
 class Pipeline
 {
 public:
 	unsigned int ID;
 	std::map<std::string, std::vector<int>> map;
-	std::vector<std::unique_ptr<MeshObject>> tiles;
-	std::vector<std::unique_ptr<MeshObject>> meshes;
+	std::vector<Tile> tiles;
 
 	Pipeline();
 
