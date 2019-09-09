@@ -58,7 +58,9 @@ public:
 				glUniform3fv(pipeline->map["camPos"][1], 1, &camera->pos[0]);
 			}
 
-			pipeline->draw(camera->projection*camera->view, map.map);
+			auto vp = camera->projection*camera->view;
+			glUniformMatrix4fv(pipeline->map["vp"][1], 1, GL_FALSE, &vp[0][0]);
+			pipeline->draw(map.map);
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();

@@ -64,11 +64,11 @@ void Pipeline::attachShader(const Shader * shader) {
 	glAttachShader(ID, shader->ID);
 }
 
-void Pipeline::draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> pieces) {
+void Pipeline::draw(std::vector<std::vector<Map::MinimalPiece *>> pieces) {
 	for (int i = 0; i < pieces.size(); ++i) {
 		for (int j = 0; j < pieces[0].size(); ++j) {
 			if (pieces[i][j]->pieceInd) {
-				tiles[pieces[i][j]->pieceInd - 1].draw(vp, pieces[i][j], map["mvp"][1], j, i);
+				tiles[pieces[i][j]->pieceInd - 1].draw(pieces[i][j], map["m"][1], map["fr"][1], j, i);
 			}
 		}
 	}

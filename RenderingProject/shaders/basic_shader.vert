@@ -1,6 +1,8 @@
 #version 450
 
-uniform mat4 mvp;
+uniform mat4 fr;
+uniform mat4 m;
+uniform mat4 vp;
 
 in vec3 pos;
 in vec3 normal;
@@ -15,8 +17,8 @@ out gl_PerVertex{
 };
 
 void main() {
-	worldPos = pos;
-	worldNormal = normal;
+	worldPos = (m * vec4(pos, 1.0)).xyz;
+	worldNormal = normalize(fr * vec4(normal, 1.0)).xyz;
 	UV = texCoord;
-    gl_Position = mvp * vec4(pos, 1.0);
+    gl_Position = vp * m * vec4(pos, 1.0);
 }

@@ -36,7 +36,7 @@ public:
 
 	void getAttributeData();
 
-	void draw(glm::mat4 vp, std::vector<std::vector<Map::MinimalPiece *>> map);
+	void draw(std::vector<std::vector<Map::MinimalPiece *>> map);
 
 #ifndef NDEBUG
 	void checkForErrors();

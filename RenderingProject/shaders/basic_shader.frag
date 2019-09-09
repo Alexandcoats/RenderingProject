@@ -10,7 +10,7 @@ in vec2 UV;
 
 out vec4 outColor;
 
-vec3 ambientColor = vec3(0.0, 0.0, 0.0);
+vec3 ambientColor = vec3(0.1, 0.1, 0.1);
 vec3 specColor = vec3(1.0, 1.0, 1.0);
 float shininess = 100.0;
 
@@ -27,7 +27,7 @@ vec4 blinnphong(){
         spec = pow(max(dot(halfway, N), 0.0), shininess);
     }
 	vec3 diffuseColor = texture(texSampler, UV).rgb;
-    return vec4(ambientColor+lamb*diffuseColor+spec*specColor, 1.0);
+    return vec4(ambientColor+lamb*2.0*diffuseColor+spec*specColor, 1.0);
 }
 
 void main() {
