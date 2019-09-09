@@ -1,16 +1,6 @@
 # Blender MTL File: 'tileset.blend'
 # Material Count: 2
 
-newmtl Material
-Ns 323.999994
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.0 0.0 0.0
-Ni 1.000000
-d 1.000000
-illum 2
-
 newmtl alltiles
 Ns 44.646705
 Ka 1.000000 1.000000 1.000000
@@ -21,3 +11,14 @@ Ni 1.450000
 d 1.000000
 illum 1
 map_Kd C:\\Users\\acoats\\source\\repos\\RenderingProject\\RenderingProject\\textures\\alltiles_d.png
+
+newmtl sconce
+Ns 5.373973
+Ka 0.154545 0.154545 0.154545
+Kd 0.014532 0.011069 0.006706
+Ks 0.072727 0.072727 0.072727
+Ke 0.0 0.0 0.0
+Ni 1.450000
+d 1.000000
+illum 3
+map_Kd C:\\Users\\acoats\\source\\repos\\RenderingProject\\RenderingProject\\textures\\sconce.png

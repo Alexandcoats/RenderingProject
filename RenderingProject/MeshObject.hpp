@@ -1,14 +1,15 @@
 #pragma once
 
-#include <algorithm>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
-
+#include <algorithm>
 #include "VertexArrayObject.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 #include <memory>
 #include "Texture.hpp"
+#include <tiny_obj_loader.h>
+#include <unordered_map>
 
 struct Vertex {
 	glm::vec3 pos;
@@ -18,6 +19,15 @@ struct Vertex {
 	bool operator==(const Vertex & other) const {
 		return pos == other.pos && texCoord == other.texCoord;
 	}
+};
+
+struct Material {
+	tinyobj::material_t material;
+	unsigned int bufferIDs[2];
+	VertexArrayObject * vao;
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+	unsigned int indexSize;
 };
 
 namespace std {
@@ -33,18 +43,15 @@ namespace std {
 class MeshObject
 {
 public:
-	unsigned int bufferIDs[2];
-	int locations[3];
+	int locations[4];
 
-	std::shared_ptr<Texture> texture;
+	std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
+
+	std::vector<Material> materials;
 
 	glm::vec3 pos;
 
-	VertexArrayObject * vao;
-
-	unsigned int indexSize;
-
-	MeshObject(const int locations[3], std::vector<Vertex> vertexData, std::vector<unsigned int> indexData);
+	MeshObject(const int locations[4], std::vector<Material> materials);
 	~MeshObject();
 
 	// Disable copying of Meshes
@@ -52,7 +59,11 @@ public:
 
 	MeshObject& operator=(const MeshObject&) = delete;
 
-	void createBuffers(std::vector<Vertex> vertexData, std::vector<unsigned int> indexData);
+	void createBuffers(Material & material);
+
+	void loadTexture(std::string filepath);
+
+	void loadTextures(const Material & material);
 
 	void draw();
 

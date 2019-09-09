@@ -1,21 +1,28 @@
-#define TINYOBJLOADER_IMPLEMENTATION
 #include "MeshObject.hpp"
 #include <iostream>
+#include <stb_image.h>
 
-MeshObject::MeshObject(const int locations[3], std::vector<Vertex> vertexData, std::vector<unsigned int> indexData) {
+MeshObject::MeshObject(const int locations[4], std::vector<Material> materials) : materials(materials) {
 	this->locations[0] = locations[0];
 	this->locations[1] = locations[1];
 	this->locations[2] = locations[2];
+	this->locations[3] = locations[3];
 
-	createBuffers(vertexData, indexData);
+	for (auto & m : this->materials) {
+		createBuffers(m);
+		loadTextures(m);
+	}
 }
 
 void MeshObject::draw() {
-	if(texture) texture->draw();
-	vao->bind();
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
-	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
-	vao->unbind();
+	for (const auto & m : materials) {
+		auto texture = textures[m.material.diffuse_texname];
+		if (texture) texture->draw();
+		m.vao->bind();
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.bufferIDs[1]);
+		glDrawElements(GL_TRIANGLES, m.indexSize, GL_UNSIGNED_INT, (void*)0);
+		m.vao->unbind();
+	}
 }
 
 void MeshObject::createBuffer(unsigned int * bufferID, GLsizeiptr size, const void * data) {
@@ -31,34 +38,54 @@ void MeshObject::createIndexBuffer(unsigned int * bufferID, GLsizeiptr size, con
 }
 
 
-void MeshObject::createBuffers(std::vector<Vertex> vertexData, std::vector<unsigned int> indexData) {
+void MeshObject::createBuffers(Material & material) {
 	//std::cout << "Creating model VBOs in OpenGL" << std::endl;
 
-	vao = new VertexArrayObject();
-	vao->bind();
+	material.vao = new VertexArrayObject();
+	material.vao->bind();
 
 	//create vertex buffer
-	createBuffer(&bufferIDs[0], vertexData.size() * sizeof(Vertex), vertexData.data());
+	createBuffer(&material.bufferIDs[0], material.vertices.size() * sizeof(Vertex), material.vertices.data());
 
 	//create index buffer
-	createIndexBuffer(&bufferIDs[1], indexData.size() * sizeof(unsigned int), indexData.data());
+	createIndexBuffer(&material.bufferIDs[1], material.indices.size() * sizeof(unsigned int), material.indices.data());
 
-	vao->writeVertexAttribute(locations[0], 3, sizeof(Vertex), (void*)offsetof(Vertex, pos));
+	material.vao->writeVertexAttribute(locations[0], 3, sizeof(Vertex), (void*)offsetof(Vertex, pos));
 
 	if (locations[1] != -1)
 	{
-		vao->writeVertexAttribute(locations[1], 3, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+		material.vao->writeVertexAttribute(locations[1], 3, sizeof(Vertex), (void*)offsetof(Vertex, normal));
 	}
 
 	if (locations[2] != -1)
 	{
-		vao->writeVertexAttribute(locations[2], 2, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
+		material.vao->writeVertexAttribute(locations[2], 2, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
 	}
 
 
-	vao->unbind();
+	material.vao->unbind();
 
-	indexSize = indexData.size();
+	material.indexSize = material.indices.size();
+
+	material.vertices.clear();
+	material.indices.clear();
+}
+
+void MeshObject::loadTexture(std::string filepath) {
+	int height, width, channels;
+	unsigned char * pixels;
+
+	auto texture = std::make_shared<Texture>(locations[3], textures.size());
+	pixels = stbi_load(filepath.c_str(), &width, &height, &channels, 4);
+	texture->push(pixels, width, height, channels);
+	textures[filepath] = texture;
+}
+
+void MeshObject::loadTextures(const Material & material) {
+	if (material.material.diffuse_texname != "") {
+		loadTexture(material.material.diffuse_texname);
+	}
+	// Load the rest of the textures if we want them
 }
 
 MeshObject::~MeshObject() {
