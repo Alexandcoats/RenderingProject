@@ -9,6 +9,13 @@ Ks 0.000000 0.000000 0.000000
 Ke 0.0 0.0 0.0
 Ni 1.450000
 d 1.000000
+Pr 0.777273
+Pm 0.000000
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
 illum 1
 map_Kd C:\\Users\\acoats\\source\\repos\\RenderingProject\\RenderingProject\\textures\\alltiles_d.png
 
@@ -20,5 +27,12 @@ Ks 0.072727 0.072727 0.072727
 Ke 0.0 0.0 0.0
 Ni 1.450000
 d 1.000000
+Pr 0.922727
+Pm 0.154545
+Ps 0.000000
+Pc 0.000000
+Pcr 0.030000
+aniso 0.000000
+anisor 0.000000
 illum 3
 map_Kd C:\\Users\\acoats\\source\\repos\\RenderingProject\\RenderingProject\\textures\\sconce.png

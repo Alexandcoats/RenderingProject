@@ -54,13 +54,13 @@ public:
 			pipeline->use();
 
 			if (pipeline->map.count("lightPos") && pipeline->map.count("camPos")) {
-				glUniform3fv(pipeline->map["lightPos"][1], 1, &glm::vec3(10.0f, 10.0f, 10.0f)[0]);
+				glUniform3fv(pipeline->map["lightPos"][1], 1, &glm::vec3(50.0f, 3.0f, 50.0f)[0]);
 				glUniform3fv(pipeline->map["camPos"][1], 1, &camera->pos[0]);
 			}
 
-			auto vp = camera->projection*camera->view;
-			glUniformMatrix4fv(pipeline->map["vp"][1], 1, GL_FALSE, &vp[0][0]);
-			pipeline->draw(map.map);
+			glUniformMatrix4fv(pipeline->map["p"][1], 1, GL_FALSE, &camera->projection[0][0]);
+			glUniformMatrix4fv(pipeline->map["v"][1], 1, GL_FALSE, &camera->view[0][0]);
+			pipeline->draw(map.map, camera->view);
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();
@@ -143,8 +143,8 @@ public:
 	}
 
 	void initPipeline() {
-		Shader VertShader{ "./shaders/basic_shader.vert", GL_VERTEX_SHADER };
-		Shader FragShader{ "./shaders/basic_shader.frag", GL_FRAGMENT_SHADER };
+		Shader VertShader{ "./shaders/BRDF_shader.vert", GL_VERTEX_SHADER };
+		Shader FragShader{ "./shaders/BRDF_shader.frag", GL_FRAGMENT_SHADER };
 
 		pipeline = new Pipeline{ &VertShader, &FragShader };
 		pipeline->use();
@@ -211,7 +211,7 @@ public:
 			}
 			else if (app->keyboardState[GLFW_KEY_G]) {
 				app->walkMode = !app->walkMode;
-				if (app->walkMode) app->camera->pos = glm::vec3(0.0f, 3.0f, 0.0f);
+				if (app->walkMode) app->camera->pos = glm::vec3(10.0f, 3.0f, 10.0f);
 			}
 		}
 		else if (action == GLFW_RELEASE) {
