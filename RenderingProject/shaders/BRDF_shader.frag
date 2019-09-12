@@ -3,7 +3,7 @@
 uniform sampler2D texSampler;
 uniform vec3 camPos;
 uniform vec3 lightPos;
-uniform float brightness = 500000;
+uniform float brightness = 200000;
 
 uniform vec3 baseColor = vec3(.16);
 uniform float metallic = 0.0;

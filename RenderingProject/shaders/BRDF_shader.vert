@@ -23,7 +23,7 @@ void computeTangentVectors(vec3 inVec, out vec3 uVec, out vec3 vVec) {
 
 void main() {
 	worldSpacePos = (m * vec4(pos, 1.0)).xyz;
-	worldSpaceNormal = normalize(n * vec4(normal, 1.0)).xyz;
+	worldSpaceNormal = (n * vec4(normalize(normal), 1.0)).xyz;
 	UV = texCoord;
 
 	computeTangentVectors(worldSpaceNormal, worldSpaceTangent, worldSpaceBitangent);

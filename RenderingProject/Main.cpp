@@ -6,7 +6,7 @@
 #include "Map.hpp"
 #include "Pipeline.hpp"
 #include "Texture.hpp"
-#include "MeshObject.hpp"
+#include "Material.hpp"
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
 
@@ -17,7 +17,8 @@ class Application {
 	int width, height;
 	GLFWwindow* window;
 	Map map;
-	Pipeline* pipeline;
+	Pipeline* pipelineBRDF;
+	Pipeline* pipelineNormals;
 	Camera* camera;
 
 	bool keyboardState[GLFW_KEY_LAST] = { false };
@@ -25,6 +26,7 @@ class Application {
 	double cursorPos[2];
 
 	bool walkMode = false;
+	bool showNormals = true;
 
 public:
 	void run() {
@@ -35,7 +37,7 @@ public:
 		
 		initWindow();
 		initInput();
-		initPipeline();
+		initPipelines();
 		mainLoop();
 	}
 
@@ -51,16 +53,21 @@ public:
 
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			pipeline->use();
+			pipelineBRDF->use();
 
-			if (pipeline->map.count("lightPos") && pipeline->map.count("camPos")) {
-				glUniform3fv(pipeline->map["lightPos"][1], 1, &glm::vec3(50.0f, 3.0f, 50.0f)[0]);
-				glUniform3fv(pipeline->map["camPos"][1], 1, &camera->pos[0]);
+			glUniform3fv(pipelineBRDF->getAttributeLocation("lightPos"), 1, &glm::vec3(50.0f, 3.0f, 50.0f)[0]);
+			glUniform3fv(pipelineBRDF->getAttributeLocation("camPos"), 1, &camera->pos[0]);
+
+			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
+			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
+			pipelineBRDF->draw(map.map, camera->view);
+
+			if (showNormals) {
+				pipelineNormals->use();
+				glUniformMatrix4fv(pipelineNormals->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
+				glUniformMatrix4fv(pipelineNormals->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
+				pipelineNormals->draw(map.map, camera->view);
 			}
-
-			glUniformMatrix4fv(pipeline->map["p"][1], 1, GL_FALSE, &camera->projection[0][0]);
-			glUniformMatrix4fv(pipeline->map["v"][1], 1, GL_FALSE, &camera->view[0][0]);
-			pipeline->draw(map.map, camera->view);
 
 			glfwSwapBuffers(window);
 			glfwPollEvents();
@@ -142,14 +149,22 @@ public:
 		camera = new Camera(width, height, glm::vec3(-5.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
-	void initPipeline() {
-		Shader VertShader{ "./shaders/BRDF_shader.vert", GL_VERTEX_SHADER };
-		Shader FragShader{ "./shaders/BRDF_shader.frag", GL_FRAGMENT_SHADER };
+	void initPipelines() {
+		Shader BRDFVertShader{ "./shaders/BRDF_shader.vert", GL_VERTEX_SHADER };
+		Shader BRDFFragShader{ "./shaders/BRDF_shader.frag", GL_FRAGMENT_SHADER };
 
-		pipeline = new Pipeline{ &VertShader, &FragShader };
-		pipeline->use();
+		pipelineBRDF = new Pipeline{ &BRDFVertShader, &BRDFFragShader };
+		pipelineBRDF->use();
 
-		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", pipeline->map["pos"][1], pipeline->map["normal"][1], pipeline->map["texCoord"][1], pipeline->map["texSampler"][1], pipeline->tiles);
+		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };
+		Shader NormGeomShader{ "./shaders/normals_shader.geom", GL_GEOMETRY_SHADER };
+		Shader NormFragShader{ "./shaders/normals_shader.frag", GL_FRAGMENT_SHADER };
+
+		pipelineNormals = new Pipeline{ &NormVertShader, &NormGeomShader, &NormFragShader };
+
+		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", pipelineBRDF->tiles);
+
+		pipelineNormals->tiles = pipelineBRDF->tiles;
 	}
 
 	void initInput() {

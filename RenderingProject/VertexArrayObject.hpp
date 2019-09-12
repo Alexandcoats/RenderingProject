@@ -19,6 +19,6 @@ public:
 
 	void unbind();
 
-	void writeVertexAttribute(unsigned int location, int size, int stride, const void * offset);
+	void writeVertexAttribute(unsigned int location, int size, int offset);
 };
 

@@ -9,8 +9,9 @@ void VertexArrayObject::bind() {
 	glBindVertexArray(ID);
 }
 
-void VertexArrayObject::writeVertexAttribute(unsigned int location, int size, int stride, const void * offset) {
-	glVertexAttribPointer(location, size, GL_FLOAT, GL_FALSE, stride, offset);
+void VertexArrayObject::writeVertexAttribute(unsigned int location, int size, int offset) {
+	glVertexAttribFormat(location, size, GL_FLOAT, GL_FALSE, offset);
+	glVertexAttribBinding(location, ID);
 	glEnableVertexAttribArray(location);
 }
 
@@ -21,5 +22,5 @@ void VertexArrayObject::unbind() {
 
 VertexArrayObject::~VertexArrayObject()
 {
-	glDeleteVertexArrays(1, &ID);
+	//glDeleteVertexArrays(1, &ID);
 }

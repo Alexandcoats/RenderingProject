@@ -22,7 +22,7 @@
     <ClCompile Include="external\glad\src\glad.c" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="MeshObject.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Map.cpp" />
     <ClCompile Include="Pipeline.cpp" />
     <ClCompile Include="Shader.cpp" />
@@ -33,7 +33,7 @@
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="FrameBuffer.hpp" />
     <ClInclude Include="json.hpp" />
-    <ClInclude Include="MeshObject.hpp" />
+    <ClInclude Include="Material.hpp" />
     <ClInclude Include="Map.hpp" />
     <ClInclude Include="Pipeline.hpp" />
     <ClInclude Include="Shader.hpp" />

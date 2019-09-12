@@ -1,6 +1,6 @@
 #include "Texture.hpp"
 
-Texture::Texture(unsigned int textureLocation, unsigned int textureUnit): textureLocation(textureLocation), textureUnit(textureUnit)
+Texture::Texture(unsigned int textureUnit): textureUnit(textureUnit)
 {
 	if (textureUnit > GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS) throw std::runtime_error("Too many textures have been created!");
 	glGenTextures(1, &ID);
@@ -14,8 +14,9 @@ void Texture::bind() {
 	glBindTexture(GL_TEXTURE_2D, ID);
 }
 
-void Texture::draw() {
-	glUniform1i(textureLocation, textureUnit);
+void Texture::draw(int location) {
+	bind();
+	glUniform1i(location, textureUnit);
 }
 
 void Texture::push(unsigned char * pixels, int width, int height, int channels) {

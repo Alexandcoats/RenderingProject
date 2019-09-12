@@ -21,15 +21,6 @@ struct Vertex {
 	}
 };
 
-struct Material {
-	tinyobj::material_t material;
-	unsigned int bufferIDs[2];
-	VertexArrayObject * vao;
-	std::vector<Vertex> vertices;
-	std::vector<unsigned int> indices;
-	unsigned int indexSize;
-};
-
 namespace std {
 	template<> struct hash<Vertex> {
 		size_t operator()(Vertex const& vertex) const {
@@ -40,32 +31,36 @@ namespace std {
 	};
 }
 
-class MeshObject
+class Material
 {
 public:
-	int locations[4];
+	tinyobj::material_t material;
+	unsigned int bufferIDs[2];
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+	unsigned int indexSize;
 
 	std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
 
-	std::vector<Material> materials;
-
 	glm::vec3 pos;
 
-	MeshObject(const int locations[4], std::vector<Material> materials);
-	~MeshObject();
+	Material(tinyobj::material_t material);
+	~Material();
 
 	// Disable copying of Meshes
-	MeshObject(const MeshObject &) = delete;
+	Material(const Material &) = delete;
 
-	MeshObject& operator=(const MeshObject&) = delete;
+	Material& operator=(const Material&) = delete;
 
-	void createBuffers(Material & material);
+	void createBuffers();
+
+	void bindVertexBuffer();
 
 	void loadTexture(std::string filepath);
 
-	void loadTextures(const Material & material);
+	void loadTextures();
 
-	void draw();
+	void draw(int vaoID, int texLoc);
 
 private:
 
