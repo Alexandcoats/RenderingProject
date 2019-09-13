@@ -9,6 +9,7 @@
 #include "Material.hpp"
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
+#include <math.h>
 
 static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, FLY_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
 
@@ -26,7 +27,7 @@ class Application {
 	double cursorPos[2];
 
 	bool walkMode = false;
-	bool showNormals = true;
+	bool showNormals = false;
 
 public:
 	void run() {
@@ -55,7 +56,9 @@ public:
 
 			pipelineBRDF->use();
 
-			glUniform3fv(pipelineBRDF->getAttributeLocation("lightPos"), 1, &glm::vec3(50.0f, 3.0f, 50.0f)[0]);
+			float cameraX = 25.0f * sin((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
+			float cameraY = 25.0f * cos((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
+			glUniform3fv(pipelineBRDF->getAttributeLocation("lightPos"), 1, &glm::vec3(cameraX, 3.0f, 50.0f)[0]);
 			glUniform3fv(pipelineBRDF->getAttributeLocation("camPos"), 1, &camera->pos[0]);
 
 			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
