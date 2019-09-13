@@ -1,18 +1,32 @@
 #include "Material.hpp"
 #include <iostream>
 #include <stb_image.h>
+#include <functional>
 
 Material::Material(tinyobj::material_t material) : material(material) {
 	loadTextures();
 }
 
-void Material::draw(int vaoID, int texLoc) {
+void Material::draw(int vaoID, std::function<int(std::string)> attrLocation) {
+
+	// Ideally we should be sending the whole material struct, but since it doesn't match up with our shader...oh well
+
+	glUniform1f(attrLocation("metallic"), material.metallic);
+	//glUniform1f(attrLocation("subsurface"), material.subsurface); // Subsurface is apparently not loaded by tinyobj?
+	//glUniform1f(attrLocation("specular"), material.specular); // Specular is loaded as a vec3???
+	glUniform1f(attrLocation("roughness"), material.roughness);
+	//glUniform1f(attrLocation("specularTint"), material.specularTint); // SpecularTint not loaded...
+	glUniform1f(attrLocation("anisotropic"), material.anisotropy);
+	glUniform1f(attrLocation("sheen"), material.sheen);
+	//glUniform1f(attrLocation("sheenTint"), material.sheenTint); // SheenTint not loaded
+	glUniform1f(attrLocation("clearcoat"), material.clearcoat_thickness);
+	glUniform1f(attrLocation("clearcoatGloss"), material.clearcoat_roughness);
 
 	//glBindBuffer(GL_ARRAY_BUFFER, bufferIDs[0]);
 	glBindVertexBuffer(vaoID, bufferIDs[0], 0, sizeof(Vertex));
 
 	auto texture = textures[material.diffuse_texname];
-	if (texture) texture->draw(texLoc);
+	if (texture) texture->draw(attrLocation("texSampler"));
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
 	glDrawElements(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0);
 }

@@ -85,11 +85,10 @@ void Pipeline::attachShader(const Shader * shader) {
 
 void Pipeline::draw(std::vector<std::vector<Map::MinimalPiece *>> pieces, glm::mat4 view) {
 	vao.bind();
-	int mLoc = getAttributeLocation("m"), nLoc = getAttributeLocation("n"), texLoc = getAttributeLocation("texSampler");
 	for (int i = 0; i < pieces.size(); ++i) {
 		for (int j = 0; j < pieces[0].size(); ++j) {
 			if (pieces[i][j]->pieceInd) {
-				tiles[pieces[i][j]->pieceInd - 1].draw(pieces[i][j], view, vao.ID, mLoc, nLoc, texLoc, j, i);
+				tiles[pieces[i][j]->pieceInd - 1].draw(pieces[i][j], view, vao.ID, [=](std::string attribute) {return this->getAttributeLocation(attribute); }, j, i);
 			}
 		}
 	}

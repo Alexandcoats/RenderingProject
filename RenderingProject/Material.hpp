@@ -60,7 +60,7 @@ public:
 
 	void loadTextures();
 
-	void draw(int vaoID, int texLoc);
+	void draw(int vaoID, std::function<int(std::string)> attrLocation);
 
 private:
 
