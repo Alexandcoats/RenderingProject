@@ -5,27 +5,31 @@
 class FrameBuffer
 {
 public:
+	enum class Texture : uint32_t
+	{
+		Position,
+		Normal,
+		Color,
+		MSSR,
+		SASS,
+		CC,
+		Depth
+	};
 	unsigned int ID;
-	unsigned int renderTextures[2];
+	unsigned int renderTextures[7];
 	glm::ivec2 resolution;
 
 	FrameBuffer(const glm::ivec2 resolution);
 	~FrameBuffer();
 
+	void bind();
+
 	void startWrite();
 
 	void endWrite();
 
-	void bindColorTexture(const int textureUnit);
-	void bindDepthTexture(const int textureUnit);
+	void bindTexture(Texture tex, const int textureUnit);
 
-	void copyToSystemFramebuffer(const glm::ivec2 systemResolution, const unsigned int buffer, const int filter);
-
-private:
-	enum class Textures : uint32_t
-	{
-		Color,
-		Depth
-	};
+	void copyToSystemFramebuffer();
 };
 

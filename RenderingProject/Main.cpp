@@ -4,11 +4,12 @@
 #include <chrono>
 #include <iostream>
 #include "Map.hpp"
-#include "Pipeline.hpp"
+#include "Pipelines.hpp"
 #include "Texture.hpp"
 #include "Material.hpp"
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
+#include "FrameBuffer.hpp"
 #include <math.h>
 
 static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, FLY_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
@@ -18,9 +19,12 @@ class Application {
 	int width, height;
 	GLFWwindow* window;
 	Map map;
-	Pipeline* pipelineBRDF;
-	Pipeline* pipelineNormals;
+	GeometryPipeline* pipelineGbuffer;
+	DeferredPipeline* pipelineBRDF;
+	DeferredPipeline* pipelineDebugGBuff;
+	GeometryPipeline* pipelineNormals;
 	Camera* camera;
+	FrameBuffer* gBuffer;
 
 	bool keyboardState[GLFW_KEY_LAST] = { false };
 	float speedModifier = 1.0f;
@@ -28,6 +32,7 @@ class Application {
 
 	bool walkMode = false;
 	bool showNormals = false;
+	bool debugGBuffer = false;
 
 public:
 	void run() {
@@ -52,24 +57,65 @@ public:
 
 			glViewport(0, 0, width, height);
 
+			gBuffer->startWrite();
+
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			pipelineBRDF->use();
-
-			float cameraX = 25.0f * sin((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
-			float cameraY = 25.0f * cos((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
-			glUniform3fv(pipelineBRDF->getAttributeLocation("lightPos"), 1, &glm::vec3(cameraX, 3.0f, 50.0f)[0]);
-			glUniform3fv(pipelineBRDF->getAttributeLocation("camPos"), 1, &camera->pos[0]);
+			pipelineGbuffer->use();
 
 			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
-			pipelineBRDF->draw(map.map, camera->view);
+
+			pipelineGbuffer->draw(map.map);
+
+			gBuffer->endWrite();
+
+			if (debugGBuffer) {
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				pipelineDebugGBuff->use();
+
+				gBuffer->bindTexture(FrameBuffer::Texture::Position, GL_TEXTURE0);
+				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE1);
+				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE2);
+				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE3);
+				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE4);
+				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE5);
+
+				pipelineDebugGBuff->draw();
+
+				gBuffer->copyToSystemFramebuffer();
+			}
+			else {
+
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+				pipelineBRDF->use();
+
+				gBuffer->bindTexture(FrameBuffer::Texture::Position, GL_TEXTURE0);
+				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE1);
+				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE2);
+				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE3);
+				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE4);
+				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE5);
+
+				float cameraX = 25.0f * sin((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
+				float cameraY = 25.0f * cos((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
+				glUniform3fv(pipelineBRDF->getAttributeLocation("lightPos"), 1, &glm::vec3(cameraX, 3.0f, 50.0f)[0]);
+				glUniform3fv(pipelineBRDF->getAttributeLocation("camPos"), 1, &camera->pos[0]);
+
+				pipelineBRDF->draw();
+
+				gBuffer->copyToSystemFramebuffer();
+
+			}
 
 			if (showNormals) {
 				pipelineNormals->use();
 				glUniformMatrix4fv(pipelineNormals->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 				glUniformMatrix4fv(pipelineNormals->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
-				pipelineNormals->draw(map.map, camera->view);
+				pipelineNormals->draw(map.map);
 			}
 
 			glfwSwapBuffers(window);
@@ -153,21 +199,47 @@ public:
 	}
 
 	void initPipelines() {
-		Shader BRDFVertShader{ "./shaders/BRDF_shader.vert", GL_VERTEX_SHADER };
+		Shader GVertShader{ "./shaders/G_shader.vert", GL_VERTEX_SHADER };
+		Shader GFragShader{ "./shaders/G_shader.frag", GL_FRAGMENT_SHADER };
+
+		pipelineGbuffer = new GeometryPipeline{ &GVertShader, &GFragShader };
+
+		gBuffer = new FrameBuffer{glm::ivec2(width, height)};
+
+		Shader DeferredVertShader{ "./shaders/deferred_shader.vert", GL_VERTEX_SHADER };
 		Shader BRDFFragShader{ "./shaders/BRDF_shader.frag", GL_FRAGMENT_SHADER };
 
-		pipelineBRDF = new Pipeline{ &BRDFVertShader, &BRDFFragShader };
+		pipelineBRDF = new DeferredPipeline{ &DeferredVertShader, &BRDFFragShader };
 		pipelineBRDF->use();
+
+		glUniform1i(pipelineBRDF->getAttributeLocation("gPosition"), 0);
+		glUniform1i(pipelineBRDF->getAttributeLocation("gNormal"), 1);
+		glUniform1i(pipelineBRDF->getAttributeLocation("gColor"), 2);
+		glUniform1i(pipelineBRDF->getAttributeLocation("gMSSR"), 3);
+		glUniform1i(pipelineBRDF->getAttributeLocation("gSASS"), 4);
+		glUniform1i(pipelineBRDF->getAttributeLocation("gCC"), 5);
+
+		Shader GBuffFragShader{ "./shaders/GBuff_shader.frag", GL_FRAGMENT_SHADER };
+
+		pipelineDebugGBuff = new DeferredPipeline{ &DeferredVertShader, &GBuffFragShader };
+		pipelineDebugGBuff->use();
+
+		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gPosition"), 0);
+		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gNormal"), 1);
+		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gColor"), 2);
+		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gMSSR"), 3);
+		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gSASS"), 4);
+		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gCC"), 5);
 
 		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };
 		Shader NormGeomShader{ "./shaders/normals_shader.geom", GL_GEOMETRY_SHADER };
 		Shader NormFragShader{ "./shaders/normals_shader.frag", GL_FRAGMENT_SHADER };
 
-		pipelineNormals = new Pipeline{ &NormVertShader, &NormGeomShader, &NormFragShader };
+		pipelineNormals = new GeometryPipeline{ &NormVertShader, &NormGeomShader, &NormFragShader };
 
-		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", pipelineBRDF->tiles);
+		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", pipelineGbuffer->tiles);
 
-		pipelineNormals->tiles = pipelineBRDF->tiles;
+		pipelineNormals->tiles = pipelineGbuffer->tiles;
 	}
 
 	void initInput() {

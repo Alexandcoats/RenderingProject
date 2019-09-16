@@ -33,7 +33,7 @@ public:
 
 	}
 
-	void draw(const Map::MinimalPiece * piece, glm::mat4 v, int vaoID, std::function<int(std::string)> attrLocation, int xpos, int zpos) const {
+	void draw(const Map::MinimalPiece * piece, int vaoID, std::function<int(std::string)> attrLocation, int xpos, int zpos) const {
 		// First draw the tile
 		glm::mat4 flip = glm::scale(glm::mat4(), glm::vec3(piece->flp ? -1.0f : 1.0f, 1.0f, 1.0f));
 		glm::mat4 rotate = glm::rotate(glm::mat4(), (glm::pi<float>() / 2.0f) * piece->rot, glm::vec3(0.0f, 1.0f, 0.0f));

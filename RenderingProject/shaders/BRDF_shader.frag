@@ -1,33 +1,39 @@
 #version 450
 
-uniform sampler2D texSampler;
+uniform sampler2D gPosition;
+uniform sampler2D gNormal;
+uniform sampler2D gColor;
+uniform sampler2D gMSSR;
+uniform sampler2D gSASS;
+uniform sampler2D gCC;
+
 uniform vec3 camPos;
 uniform vec3 lightPos;
 uniform float brightness = 10000;
 
-uniform vec3 baseColor = vec3(.16);
-uniform float metallic = 0.0;
-uniform float subsurface = 0.0;
-uniform float specular = 0.0;
-uniform float roughness = .9;
-uniform float specularTint = 0.0;
-uniform float anisotropic = 0.0;
-uniform float sheen = 0.0;
-uniform float sheenTint = 0.5;
-uniform float clearcoat = 0.0;
-uniform float clearcoatGloss = 1.0;
+vec3 baseColor = vec3(.16);
+float metallic = 0.0;
+float subsurface = 0.0;
+float specular = 0.0;
+float roughness = .9;
+float specularTint = 0.0;
+float anisotropic = 0.0;
+float sheen = 0.0;
+float sheenTint = 0.5;
+float clearcoat = 0.0;
+float clearcoatGloss = 1.0;
 
-in vec3 worldSpacePos;
-in vec3 worldSpaceNormal;
-in vec3 worldSpaceTangent;
-in vec3 worldSpaceBitangent;
 in vec2 UV;
 
 out vec4 outColor;
 
 const float PI = 3.14159265358979323846;
 
-mat3 LocalToWorld, WorldToLocal;
+void computeTangentVectors(vec3 inVec, out vec3 uVec, out vec3 vVec) {
+	uVec = abs(inVec.x) < 0.999 ? vec3(1,0,0) : vec3(0,1,0);
+	uVec = normalize(cross(inVec, uVec));
+	vVec = normalize(cross(inVec, uVec));
+}
 
 float l1Norm(vec3 v) {
 	return abs(v.x) + abs(v.y) + abs(v.z);
@@ -79,7 +85,6 @@ vec3 mon2lin(vec3 v) {
 }
 
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
-	vec3 baseColor_tex = texture(texSampler, UV).rgb;
 	float cos_ln = cos(angle(L, N));
 	float cos_vn = cos(angle(V, N));
 
@@ -93,7 +98,7 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	float cos_vx = cos(angle(V, X));
 	float cos_vy = cos(angle(V, Y));
 
-	vec3 C_dlin = mon2lin(baseColor_tex);
+	vec3 C_dlin = mon2lin(baseColor);
 	float C_dlum = 0.3*C_dlin.r + 0.6*C_dlin.g + 0.1*C_dlin.b; // luminance approximation
 	vec3 C_tint = C_dlum > 0 ? C_dlin/C_dlum : vec3(1.0);
 	vec3 C_spec0 = mix(specular*.08*mix(vec3(1.0), C_tint, specularTint), C_dlin, metallic);
@@ -131,10 +136,24 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 }
 
 void main() {
+	vec3 worldSpacePos = texture(gPosition, UV).rgb;
+	vec3 normal = normalize(texture(gNormal, UV).rgb);
+	vec3 worldSpaceTangent, worldSpaceBitangent;
+	computeTangentVectors(normal, worldSpaceTangent, worldSpaceBitangent);
+	baseColor = texture(gColor, UV).rgb;
+	metallic = texture(gMSSR, UV).r;
+	subsurface = texture(gMSSR, UV).g;
+	specular = texture(gMSSR, UV).b;
+	roughness = texture(gMSSR, UV).a;
+	specularTint = texture(gSASS, UV).r;
+	anisotropic = texture(gSASS, UV).g;
+	sheen = texture(gSASS, UV).b;
+	sheenTint = texture(gSASS, UV).a;
+	clearcoat = texture(gCC, UV).r;
+	clearcoatGloss = texture(gCC, UV).g;
 
 	vec3 viewDir = normalize(camPos - worldSpacePos);
 	vec3 lightDir = normalize(lightPos - worldSpacePos);
-	vec3 normal = normalize(worldSpaceNormal);
 	vec3 b = max(BRDF(lightDir, viewDir, normal, worldSpaceTangent, worldSpaceBitangent), vec3(0.0));
 	b *= dot(lightDir, normal);
 	float falloff = sqr(lightPos.x - worldSpacePos.x) + sqr(lightPos.y - worldSpacePos.y) + sqr(lightPos.z - worldSpacePos.z);

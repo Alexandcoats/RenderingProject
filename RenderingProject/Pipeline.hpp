@@ -15,7 +15,6 @@ class Pipeline
 public:
 	unsigned int ID;
 	std::map<std::string, std::vector<int>> map;
-	std::vector<Tile> tiles;
 
 	VertexArrayObject vao;
 
@@ -38,9 +37,7 @@ public:
 
 	void getAttributeData();
 
-	void createVAO();
-
-	void draw(std::vector<std::vector<Map::MinimalPiece *>> map, glm::mat4 view);
+	virtual void createVAO()=0;
 
 	int getAttributeLocation(std::string attribute);
 

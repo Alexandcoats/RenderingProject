@@ -36,6 +36,7 @@
     <ClInclude Include="Material.hpp" />
     <ClInclude Include="Map.hpp" />
     <ClInclude Include="Pipeline.hpp" />
+    <ClInclude Include="Pipelines.hpp" />
     <ClInclude Include="Shader.hpp" />
     <ClInclude Include="Texture.hpp" />
     <ClInclude Include="Tile.hpp" />
