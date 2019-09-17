@@ -63,8 +63,8 @@ public:
 
 			pipelineGbuffer->use();
 
-			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
-			glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
+			glUniformMatrix4fv(pipelineGbuffer->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
+			glUniformMatrix4fv(pipelineGbuffer->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
 
 			pipelineGbuffer->draw(map.map);
 
@@ -207,29 +207,36 @@ public:
 		gBuffer = new FrameBuffer{glm::ivec2(width, height)};
 
 		Shader DeferredVertShader{ "./shaders/deferred_shader.vert", GL_VERTEX_SHADER };
-		Shader BRDFFragShader{ "./shaders/BRDF_shader.frag", GL_FRAGMENT_SHADER };
+		
 
-		pipelineBRDF = new DeferredPipeline{ &DeferredVertShader, &BRDFFragShader };
-		pipelineBRDF->use();
+		if (!debugGBuffer) {
 
-		glUniform1i(pipelineBRDF->getAttributeLocation("gPosition"), 0);
-		glUniform1i(pipelineBRDF->getAttributeLocation("gNormal"), 1);
-		glUniform1i(pipelineBRDF->getAttributeLocation("gColor"), 2);
-		glUniform1i(pipelineBRDF->getAttributeLocation("gMSSR"), 3);
-		glUniform1i(pipelineBRDF->getAttributeLocation("gSASS"), 4);
-		glUniform1i(pipelineBRDF->getAttributeLocation("gCC"), 5);
+			Shader BRDFFragShader{ "./shaders/BRDF_shader.frag", GL_FRAGMENT_SHADER };
 
-		Shader GBuffFragShader{ "./shaders/GBuff_shader.frag", GL_FRAGMENT_SHADER };
+			pipelineBRDF = new DeferredPipeline{ &DeferredVertShader, &BRDFFragShader };
+			pipelineBRDF->use();
 
-		pipelineDebugGBuff = new DeferredPipeline{ &DeferredVertShader, &GBuffFragShader };
-		pipelineDebugGBuff->use();
+			glUniform1i(pipelineBRDF->getAttributeLocation("gPosition"), 0);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gNormal"), 1);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gColor"), 2);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gMSSR"), 3);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gSASS"), 4);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gCC"), 5);
+		}
+		else {
 
-		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gPosition"), 0);
-		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gNormal"), 1);
-		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gColor"), 2);
-		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gMSSR"), 3);
-		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gSASS"), 4);
-		glUniform1i(pipelineDebugGBuff->getAttributeLocation("gCC"), 5);
+			Shader GBuffFragShader{ "./shaders/GBuff_shader.frag", GL_FRAGMENT_SHADER };
+
+			pipelineDebugGBuff = new DeferredPipeline{ &DeferredVertShader, &GBuffFragShader };
+			pipelineDebugGBuff->use();
+
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gPosition"), 0);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gNormal"), 1);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gColor"), 2);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gMSSR"), 3);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gSASS"), 4);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gCC"), 5);
+		}
 
 		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };
 		Shader NormGeomShader{ "./shaders/normals_shader.geom", GL_GEOMETRY_SHADER };
