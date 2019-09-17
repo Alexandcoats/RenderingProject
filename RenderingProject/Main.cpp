@@ -4,13 +4,9 @@
 #include <chrono>
 #include <iostream>
 #include "Map.hpp"
-#include "Pipelines.hpp"
-#include "Texture.hpp"
-#include "Material.hpp"
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
 #include "FrameBuffer.hpp"
-#include <math.h>
 
 static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, FLY_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
 
@@ -25,6 +21,8 @@ class Application {
 	GeometryPipeline* pipelineNormals;
 	Camera* camera;
 	FrameBuffer* gBuffer;
+	std::vector<Light> lights;
+	std::vector<Tile> tiles;
 
 	bool keyboardState[GLFW_KEY_LAST] = { false };
 	float speedModifier = 1.0f;
@@ -44,6 +42,7 @@ public:
 		initWindow();
 		initInput();
 		initPipelines();
+		initTiles();
 		mainLoop();
 	}
 
@@ -66,7 +65,9 @@ public:
 			glUniformMatrix4fv(pipelineGbuffer->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 			glUniformMatrix4fv(pipelineGbuffer->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
 
-			pipelineGbuffer->draw(map.map);
+			for (const auto & tile : tiles) {
+				tile.draw(pipelineGbuffer);
+			}
 
 			gBuffer->endWrite();
 
@@ -100,9 +101,14 @@ public:
 				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE4);
 				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE5);
 
-				float cameraX = 25.0f * sin((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
-				float cameraY = 25.0f * cos((startTime.time_since_epoch() / std::chrono::milliseconds(1)) / 1000.0f) + 50.0f;
-				glUniform3fv(pipelineBRDF->getAttributeLocation("lightPos"), 1, &glm::vec3(cameraX, 3.0f, 50.0f)[0]);
+				glUniform1i(pipelineBRDF->getAttributeLocation("num_lights"), lights.size());
+
+				for (int i = 0; i < lights.size(); ++i) {
+					glUniform3fv(pipelineBRDF->getAttributeLocation("lights[" + std::to_string(i) + "].pos"), 1, &lights[i].pos[0]);
+					glUniform3fv(pipelineBRDF->getAttributeLocation("lights[" + std::to_string(i) + "].color"), 1, &lights[i].color[0]);
+					glUniform1f(pipelineBRDF->getAttributeLocation("lights[" + std::to_string(i) + "].brightness"), lights[i].brightness);
+				}
+
 				glUniform3fv(pipelineBRDF->getAttributeLocation("camPos"), 1, &camera->pos[0]);
 
 				pipelineBRDF->draw();
@@ -115,7 +121,9 @@ public:
 				pipelineNormals->use();
 				glUniformMatrix4fv(pipelineNormals->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 				glUniformMatrix4fv(pipelineNormals->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
-				pipelineNormals->draw(map.map);
+				for (const auto & tile : tiles) {
+					tile.draw(pipelineNormals);
+				}
 			}
 
 			glfwSwapBuffers(window);
@@ -243,10 +251,25 @@ public:
 		Shader NormFragShader{ "./shaders/normals_shader.frag", GL_FRAGMENT_SHADER };
 
 		pipelineNormals = new GeometryPipeline{ &NormVertShader, &NormGeomShader, &NormFragShader };
+	}
 
-		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", pipelineGbuffer->tiles);
+	void initTiles() {
+		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", tiles);
 
-		pipelineNormals->tiles = pipelineGbuffer->tiles;
+		for (int i = 0; i < map.map.size(); ++i) {
+			for (int j = 0; j < map.map[0].size(); ++j) {
+				if (map.map[i][j]->pieceInd) {
+					glm::mat4 flip = glm::scale(glm::mat4(), glm::vec3(map.map[i][j]->flp ? -1.0f : 1.0f, 1.0f, 1.0f));
+					glm::mat4 rotate = glm::rotate(glm::mat4(), (glm::pi<float>() / 2.0f) * map.map[i][j]->rot, glm::vec3(0.0f, 1.0f, 0.0f));
+					glm::mat4 translate = glm::translate(glm::mat4(), glm::vec3((float)j * 20.0f, 0.0f, (float)i * 20.0f));
+					glm::mat4 m = translate * rotate * flip;
+					tiles[map.map[i][j]->pieceInd - 1].instances.push_back(m);
+					for (const auto & light : tiles[map.map[i][j]->pieceInd - 1].lights) {
+						lights.push_back(light);
+					}
+				}
+			}
+		}
 	}
 
 	void initInput() {

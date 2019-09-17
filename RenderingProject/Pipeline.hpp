@@ -5,10 +5,6 @@
 #include <vector>
 #include "Shader.hpp"
 #include "VertexArrayObject.hpp"
-#include <vector>
-#include "Material.hpp"
-#include "Map.hpp"
-#include "Tile.hpp"
 
 class Pipeline
 {

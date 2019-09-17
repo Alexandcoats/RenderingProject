@@ -3,22 +3,8 @@
 
 class GeometryPipeline : public Pipeline {
 public:
-	std::vector<Tile> tiles;
-
 	GeometryPipeline(const std::initializer_list<const Shader *> shaders) : Pipeline(shaders) {
 		createVAO();
-	}
-
-	void draw(std::vector<std::vector<Map::MinimalPiece *>> pieces) {
-		vao.bind();
-		for (int i = 0; i < pieces.size(); ++i) {
-			for (int j = 0; j < pieces[0].size(); ++j) {
-				if (pieces[i][j]->pieceInd) {
-					tiles[pieces[i][j]->pieceInd - 1].draw(pieces[i][j], vao.ID, [=](std::string attribute) {return this->getAttributeLocation(attribute); }, j, i);
-				}
-			}
-		}
-		vao.unbind();
 	}
 
 	void createVAO() {
@@ -29,6 +15,11 @@ public:
 		vao.writeVertexAttribute(getAttributeLocation("normal"), 3, offsetof(Vertex, normal));
 
 		vao.writeVertexAttribute(getAttributeLocation("texCoord"), 2, offsetof(Vertex, texCoord));
+
+		vao.writeVertexAttribute(getAttributeLocation("m") + 0, 4, 0 * sizeof(glm::mat4) / 4);
+		vao.writeVertexAttribute(getAttributeLocation("m") + 1, 4, 1 * sizeof(glm::mat4) / 4);
+		vao.writeVertexAttribute(getAttributeLocation("m") + 2, 4, 2 * sizeof(glm::mat4) / 4);
+		vao.writeVertexAttribute(getAttributeLocation("m") + 3, 4, 3 * sizeof(glm::mat4) / 4);
 
 		vao.unbind();
 	}

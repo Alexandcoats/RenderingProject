@@ -8,8 +8,15 @@ uniform sampler2D gSASS;
 uniform sampler2D gCC;
 
 uniform vec3 camPos;
-uniform vec3 lightPos;
-uniform float brightness = 10000;
+
+struct Light {
+	vec3 pos;
+	vec3 color;
+	float brightness;
+};
+const int max_lights = 64;
+uniform int num_lights = 0;
+uniform Light lights[max_lights];
 
 vec3 baseColor = vec3(.16);
 float metallic = 0.0;
@@ -85,6 +92,10 @@ vec3 mon2lin(vec3 v) {
 }
 
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
+	float NdotL = dot(N, L);
+	float NdotV = dot(N, V);
+	if(NdotL < 0 || NdotV < 0) return vec3(0);
+	
 	float cos_ln = cos(angle(L, N));
 	float cos_vn = cos(angle(V, N));
 
@@ -153,11 +164,14 @@ void main() {
 	clearcoatGloss = texture(gCC, UV).g;
 
 	vec3 viewDir = normalize(camPos - worldSpacePos);
-	vec3 lightDir = normalize(lightPos - worldSpacePos);
-	vec3 b = max(BRDF(lightDir, viewDir, normal, worldSpaceTangent, worldSpaceBitangent), vec3(0.0));
-	b *= dot(lightDir, normal);
-	float falloff = sqr(lightPos.x - worldSpacePos.x) + sqr(lightPos.y - worldSpacePos.y) + sqr(lightPos.z - worldSpacePos.z);
-	b *= (1.0 / falloff);
-	b *= brightness;
-	outColor = vec4(clamp(b, vec3(0.0), vec3(1.0)), 1.0);
+
+	for(int i = 0; i < num_lights; ++i) {
+		vec3 lightDir = normalize(lights[i].pos - worldSpacePos);
+		vec3 b = max(BRDF(lightDir, viewDir, normal, worldSpaceTangent, worldSpaceBitangent), vec3(0.0));
+		b *= dot(lightDir, normal);
+		float falloff = sqr(lights[i].pos.x - worldSpacePos.x) + sqr(lights[i].pos.y - worldSpacePos.y) + sqr(lights[i].pos.z - worldSpacePos.z);
+		b *= (1.0 / falloff);
+		b *= lights[i].color * lights[i].brightness;
+		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 1.0);
+	}
 }

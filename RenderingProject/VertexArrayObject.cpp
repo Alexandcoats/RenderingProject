@@ -15,6 +15,10 @@ void VertexArrayObject::writeVertexAttribute(unsigned int location, int size, in
 	glEnableVertexAttribArray(location);
 }
 
+void VertexArrayObject::divideVertexAttribute(unsigned int location, unsigned int divisor) {
+	glVertexBindingDivisor(location, divisor);
+}
+
 void VertexArrayObject::unbind() {
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

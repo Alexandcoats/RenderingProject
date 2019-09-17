@@ -1,12 +1,14 @@
 #pragma once
-#include "Material.hpp"
+
 #include <unordered_map>
 #include <glm/glm.hpp>
-#define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
 #include <vector>
 #include <memory>
 #include "json.hpp"
+#include "Tile.hpp"
+
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <tiny_obj_loader.h>
 
 void readOBJ(std::string filepath, std::string matBaseDir, std::string metadataPath, std::vector<Tile> & tiles) {
 
@@ -43,7 +45,7 @@ void readOBJ(std::string filepath, std::string matBaseDir, std::string metadataP
 
 		std::unordered_map<Vertex, unsigned int> uniqueVertices = {};
 
-		std::vector<float> location = j[shape.name]["location"];
+		glm::vec3 location = j.count(shape.name) > 0 ? glm::vec3(j[shape.name]["location"][0], j[shape.name]["location"][1], j[shape.name]["location"][2])  : glm::vec3(0.0f, 0.0f, 0.0f);
 
 		for (int index_offset = 0, face = 0; face < shape.mesh.num_face_vertices.size(); ++face) {
 			int face_verts = shape.mesh.num_face_vertices[face];
@@ -52,9 +54,9 @@ void readOBJ(std::string filepath, std::string matBaseDir, std::string metadataP
 				const auto & index = shape.mesh.indices[index_offset + face_vert];
 				Vertex vertex = {};
 				vertex.pos = {
-					attrib.vertices[3 * index.vertex_index + 0] + location[0],
-					attrib.vertices[3 * index.vertex_index + 1] + location[2],
-					attrib.vertices[3 * index.vertex_index + 2] + location[1]
+					attrib.vertices[3 * index.vertex_index + 0] + location.x,
+					attrib.vertices[3 * index.vertex_index + 1] + location.z,
+					attrib.vertices[3 * index.vertex_index + 2] + location.y
 				};
 
 				vertex.normal = {
@@ -89,27 +91,31 @@ void readOBJ(std::string filepath, std::string matBaseDir, std::string metadataP
 		}
 
 		if (shape.name.substr(0, 4) == "tile") {
-			tiles.push_back(Tile{ mats, glm::vec3(location[0], location[2], location[1]) });
+			tiles.push_back(Tile{ mats, location });
 		} else {
 			subMeshes[shape.name] = mats;
 		}
 	}
 
 	for (auto& e : j.items()) {
-		if (e.key().substr(0, 4) == "tile" && e.key().substr(5, 1) == "_") {
-			// We can get the reference shape from the name, but it may be better to include this in the metadata
-			std::string refShape = e.key().substr(6,e.key().length() - 7);
+		std::string refShape = e.key();
+		int index = std::stoi(refShape.substr(4, 1));
+		glm::vec3 refLoc = tiles[index].location;
+		for (auto & sm : e.value()["subMeshes"]) {
 			if (subMeshes.count(refShape) > 0) {
-				std::vector<float> location = e.value()["location"];
-				std::vector<float> refRotation = j[refShape]["rotation"];
-				std::vector<float> rotation = e.value()["rotation"];
-				int index = std::stoi(e.key().substr(4, 1));
+				glm::vec3 location = { sm["location"][0], sm["location"][1], sm["location"][2] };
+				glm::vec3 rotation = { sm["rotation"][0], sm["rotation"][1], sm["rotation"][2] };
 				tiles[index].subMeshes.push_back(SubMesh{
 					subMeshes[refShape],
-					glm::vec3(location[0] - tiles[index].location.x, location[2] - tiles[index].location.y, location[1] - tiles[index].location.z),
-					glm::vec3(rotation[0], rotation[2], rotation[1])
+					location - refLoc,
+					rotation
 					});
 			}
+		}
+		for (auto & l : e.value()["lights"]) {
+			glm::vec3 pos = { l["pos"][0], l["pos"][1], l["pos"][2] };
+			glm::vec3 color = { l["color"][0], l["color"][1], l["color"][2] };
+			tiles[index].lights.push_back({ pos - refLoc, color, l["brightness"] });
 		}
 	}
 }
