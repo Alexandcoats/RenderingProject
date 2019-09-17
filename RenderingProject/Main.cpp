@@ -30,7 +30,7 @@ class Application {
 
 	bool walkMode = false;
 	bool showNormals = false;
-	bool debugGBuffer = false;
+	bool debugGBuffer = true;
 
 public:
 	void run() {
@@ -264,11 +264,16 @@ public:
 					glm::mat4 translate = glm::translate(glm::mat4(), glm::vec3((float)j * 20.0f, 0.0f, (float)i * 20.0f));
 					glm::mat4 m = translate * rotate * flip;
 					tiles[map.map[i][j]->pieceInd - 1].instances.push_back(m);
-					for (const auto & light : tiles[map.map[i][j]->pieceInd - 1].lights) {
+					for (auto light : tiles[map.map[i][j]->pieceInd - 1].lights) {
+						light.pos = glm::vec3(m * glm::vec4(light.pos, 1.0f));
 						lights.push_back(light);
 					}
 				}
 			}
+		}
+
+		for (auto & tile : tiles) {
+			tile.setInstances();
 		}
 	}
 
