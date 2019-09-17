@@ -2,7 +2,7 @@
 
 uniform mat4 p;
 uniform mat4 v;
-uniform mat4 subM = mat4();
+uniform mat4 subM = mat4(1.0);
 
 in vec3 pos;
 in vec3 normal;
@@ -14,7 +14,7 @@ out vec3 norm;
 out vec2 UV;
 
 void main() {
-	thisM = m * subM;
+	mat4 thisM = m * subM;
 	worldSpacePos = (thisM * vec4(pos, 1.0)).xyz;
 	mat4 n = transpose(inverse(thisM));
 	norm = (n * vec4(normalize(normal), 1.0)).xyz;
