@@ -44,7 +44,7 @@ public:
 
 	void unbind();
 
-	void writeVertexAttribute(unsigned int location, int size, int offset);
+	void writeVertexAttribute(unsigned int location, int size, int offset, unsigned int bindingIndex);
 
-	void divideVertexAttribute(unsigned int location, unsigned int divisor);
+	void divideVertexAttribute(unsigned int bindingIndex, unsigned int divisor);
 };

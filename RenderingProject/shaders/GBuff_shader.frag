@@ -12,5 +12,5 @@ in vec2 UV;
 out vec4 outColor;
 
 void main() {
-	outColor = texture(gPosition, UV);
+	outColor = texture(gColor, UV);
 }

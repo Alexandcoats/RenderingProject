@@ -8,20 +8,18 @@ public:
 	}
 
 	void createVAO() {
-		vao.bind();
+		vao.writeVertexAttribute(getAttributeLocation("pos"), 3, offsetof(Vertex, pos), 0);
 
-		vao.writeVertexAttribute(getAttributeLocation("pos"), 3, offsetof(Vertex, pos));
+		vao.writeVertexAttribute(getAttributeLocation("normal"), 3, offsetof(Vertex, normal), 0);
 
-		vao.writeVertexAttribute(getAttributeLocation("normal"), 3, offsetof(Vertex, normal));
+		vao.writeVertexAttribute(getAttributeLocation("texCoord"), 2, offsetof(Vertex, texCoord), 0);
 
-		vao.writeVertexAttribute(getAttributeLocation("texCoord"), 2, offsetof(Vertex, texCoord));
+		//vao.divideVertexAttribute(0, 0);
 
-		vao.writeVertexAttribute(getAttributeLocation("m") + 0, 4, 0 * sizeof(glm::mat4) / 4);
-		vao.writeVertexAttribute(getAttributeLocation("m") + 1, 4, 1 * sizeof(glm::mat4) / 4);
-		vao.writeVertexAttribute(getAttributeLocation("m") + 2, 4, 2 * sizeof(glm::mat4) / 4);
-		vao.writeVertexAttribute(getAttributeLocation("m") + 3, 4, 3 * sizeof(glm::mat4) / 4);
-
-		vao.unbind();
+		for (int i = 0; i < 4; ++i) {
+			vao.writeVertexAttribute(getAttributeLocation("m") + i, 4, i * sizeof(glm::vec4), 1);
+		}
+		vao.divideVertexAttribute(1, 1);
 	}
 
 };
@@ -55,21 +53,16 @@ public:
 	}
 
 	void draw() {
-		vao.bind();
-		glBindVertexBuffer(vao.ID, bufferIDs[0], 0, sizeof(LightVertex));
+		glVertexArrayVertexBuffer(vao.ID, 0, bufferIDs[0], 0, sizeof(LightVertex));
 
+		vao.bind();
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
-		vao.unbind();
 	}
 
 	void createVAO() {
-		vao.bind();
+		vao.writeVertexAttribute(getAttributeLocation("pos"), 2, offsetof(LightVertex, pos), 0);
 
-		vao.writeVertexAttribute(getAttributeLocation("pos"), 2, offsetof(LightVertex, pos));
-
-		vao.writeVertexAttribute(getAttributeLocation("texCoord"), 2, offsetof(LightVertex, texCoord));
-
-		vao.unbind();
+		vao.writeVertexAttribute(getAttributeLocation("texCoord"), 2, offsetof(LightVertex, texCoord), 0);
 	}
 };

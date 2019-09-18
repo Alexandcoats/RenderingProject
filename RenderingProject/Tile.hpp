@@ -32,7 +32,6 @@ public:
 class Tile {
 public:
 	std::vector<std::shared_ptr<Material>> materials;
-	glm::vec3 location;
 	
 	unsigned int instanceVBO;
 	unsigned int numInstances;
@@ -40,7 +39,7 @@ public:
 	std::vector<SubMesh> subMeshes;
 	std::vector<Light> lights;
 
-	Tile(std::vector<std::shared_ptr<Material>> materials, glm::vec3 location) : materials(materials), location(location) {
+	Tile(std::vector<std::shared_ptr<Material>> materials) : materials(materials) {
 		
 	}
 
@@ -55,7 +54,7 @@ public:
 
 	void draw(GeometryPipeline * pipeline) const {
 		if (numInstances == 0) return;
-		pipeline->vao.bind();
+		glUniformMatrix4fv(pipeline->getAttributeLocation("subM"), 1, GL_FALSE, &glm::mat4()[0][0]);
 		for (const auto & material : materials) {
 			material->draw(pipeline, numInstances, instanceVBO);
 		}
@@ -63,6 +62,5 @@ public:
 			// Next draw any sub-meshes it has
 			mesh.draw(pipeline, numInstances, instanceVBO);
 		}
-		pipeline->vao.unbind();
 	}
 };

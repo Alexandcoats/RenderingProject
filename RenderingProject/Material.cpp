@@ -22,16 +22,14 @@ void Material::draw(GeometryPipeline * pipeline, unsigned int numInstances, unsi
 	glUniform1f(pipeline->getAttributeLocation("clearcoat"), material.clearcoat_thickness);
 	glUniform1f(pipeline->getAttributeLocation("clearcoatGloss"), material.clearcoat_roughness);
 
-	//glBindBuffer(GL_ARRAY_BUFFER, bufferIDs[0]);
-	glBindVertexBuffer(pipeline->vao.ID, bufferIDs[0], 0, sizeof(Vertex));
+	glVertexArrayVertexBuffer(pipeline->vao.ID, 0, bufferIDs[0], 0, sizeof(Vertex));
 
-	glBindVertexBuffer(pipeline->vao.ID, instanceVBO, 0 * sizeof(glm::vec4), sizeof(glm::mat4));
-	glBindVertexBuffer(pipeline->vao.ID, instanceVBO, 1 * sizeof(glm::vec4), sizeof(glm::mat4));
-	glBindVertexBuffer(pipeline->vao.ID, instanceVBO, 2 * sizeof(glm::vec4), sizeof(glm::mat4));
-	glBindVertexBuffer(pipeline->vao.ID, instanceVBO, 3 * sizeof(glm::vec4), sizeof(glm::mat4));
+	glVertexArrayVertexBuffer(pipeline->vao.ID, 1, instanceVBO, 0, sizeof(glm::mat4));
 
 	auto texture = textures[material.diffuse_texname];
 	if (texture) texture->draw(pipeline->getAttributeLocation("texSampler"));
+
+	pipeline->vao.bind();
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIDs[1]);
 	glDrawElementsInstanced(GL_TRIANGLES, indexSize, GL_UNSIGNED_INT, (void*)0, numInstances);
 }

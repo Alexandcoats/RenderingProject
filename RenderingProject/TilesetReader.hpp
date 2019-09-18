@@ -91,29 +91,32 @@ void readOBJ(std::string filepath, std::string matBaseDir, std::string metadataP
 		}
 
 		if (shape.name.substr(0, 4) == "tile") {
-			tiles.push_back(Tile{ mats, location });
+			tiles.push_back(Tile{ mats });
 		} else {
 			subMeshes[shape.name] = mats;
 		}
 	}
 
-	for (auto& e : j.items()) {
+	for (auto & e : j.items()) {
 		std::string refShape = e.key();
 		int index = std::stoi(refShape.substr(4, 1));
-		glm::vec3 refLoc = tiles[index].location;
-		for (auto & sm : e.value()["subMeshes"]) {
-			if (subMeshes.count(refShape) > 0) {
-				glm::vec3 location = { sm["location"][0], sm["location"][1], sm["location"][2] };
-				glm::vec3 rotation = { sm["rotation"][0], sm["rotation"][1], sm["rotation"][2] };
+		glm::vec3 refLoc = { j[refShape]["location"][0], j[refShape]["location"][2], j[refShape]["location"][1] };
+		for (auto & e2 : j[refShape]["subMeshes"].items()) {
+			std::string subMeshShape = e2.key();
+			subMeshShape = subMeshShape.substr(0, subMeshShape.length() - 1);
+			auto sm = e2.value();
+			if (subMeshes.count(subMeshShape) > 0) {
+				glm::vec3 location = { sm["location"][0], sm["location"][2], sm["location"][1] };
+				glm::vec3 rotation = { sm["rotation"][0], sm["rotation"][2], sm["rotation"][1] };
 				tiles[index].subMeshes.push_back(SubMesh{
-					subMeshes[refShape],
+					subMeshes[subMeshShape],
 					location - refLoc,
 					rotation
 					});
 			}
 		}
 		for (auto & l : e.value()["lights"]) {
-			glm::vec3 pos = { l["pos"][0], l["pos"][1], l["pos"][2] };
+			glm::vec3 pos = { l["pos"][0], l["pos"][2], l["pos"][1] };
 			glm::vec3 color = { l["color"][0], l["color"][1], l["color"][2] };
 			tiles[index].lights.push_back({ pos - refLoc, color, l["brightness"] });
 		}

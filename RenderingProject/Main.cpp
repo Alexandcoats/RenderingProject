@@ -30,7 +30,7 @@ class Application {
 
 	bool walkMode = false;
 	bool showNormals = false;
-	bool debugGBuffer = true;
+	bool debugGBuffer = false;
 
 public:
 	void run() {
