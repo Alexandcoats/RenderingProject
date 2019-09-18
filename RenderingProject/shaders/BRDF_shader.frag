@@ -166,10 +166,11 @@ void main() {
 	vec3 viewDir = normalize(camPos - worldSpacePos);
 
 	for(int i = 0; i < num_lights; ++i) {
+		float falloff = sqr(lights[i].pos.x - worldSpacePos.x) + sqr(lights[i].pos.y - worldSpacePos.y) + sqr(lights[i].pos.z - worldSpacePos.z);
+		if(falloff > lights[i].brightness) continue;
 		vec3 lightDir = normalize(lights[i].pos - worldSpacePos);
 		vec3 b = max(BRDF(lightDir, viewDir, normal, worldSpaceTangent, worldSpaceBitangent), vec3(0.0));
 		b *= dot(lightDir, normal);
-		float falloff = sqr(lights[i].pos.x - worldSpacePos.x) + sqr(lights[i].pos.y - worldSpacePos.y) + sqr(lights[i].pos.z - worldSpacePos.z);
 		b *= (1.0 / falloff);
 		b *= lights[i].color * lights[i].brightness;
 		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 1.0);
