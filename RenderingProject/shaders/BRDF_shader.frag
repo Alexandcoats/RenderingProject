@@ -9,6 +9,8 @@ uniform sampler2D gSASS;
 uniform sampler2D gCC;
 uniform sampler2D gDepth;
 
+uniform sampler3D shadowMap;
+
 uniform vec3 camPos;
 
 struct Light {
@@ -91,6 +93,22 @@ float smithG_GGX_aniso(float u, float ux, float uy, float ax, float ay) {
 
 vec3 mon2lin(vec3 v) {
 	return vec3(pow(v.x, 2.2), pow(v.y, 2.2), pow(v.z, 2.2));
+}
+
+float signNotZero(in float k) {
+    return k >= 0.0 ? 1.0 : -1.0;
+}
+
+vec2 signNotZero(in vec2 v) {
+    return vec2( signNotZero(v.x), signNotZero(v.y) );
+}
+
+vec3 finalDecode(float x, float y) {
+    vec3 v = vec3(x, y, 1.0 - abs(x) - abs(y));
+    if (v.z < 0) {
+        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
+    }
+    return normalize(v);
 }
 
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {

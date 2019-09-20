@@ -6,7 +6,7 @@
 #include "Map.hpp"
 #include "Camera.hpp"
 #include "TilesetReader.hpp"
-#include "FrameBuffer.hpp"
+#include "FrameBuffers.hpp"
 
 static const float WALK_SPEED = 0.1f, SPRINT_SPEED = 1.0f, FLY_SPEED = 1.0f, CAMERA_SPEED = 0.002f;
 
@@ -18,9 +18,11 @@ class Application {
 	GeometryPipeline* pipelineGbuffer;
 	DeferredPipeline* pipelineBRDF;
 	DeferredPipeline* pipelineDebugGBuff;
+	GeometryPipeline* pipelineShadows;
 	GeometryPipeline* pipelineNormals;
 	Camera* camera;
-	FrameBuffer* gBuffer;
+	GBuffer* gBuffer;
+	ShadowBuffer* shadowBuffer;
 	std::vector<Light> lights;
 	std::vector<Tile> tiles;
 
@@ -43,6 +45,7 @@ public:
 		initInput();
 		initPipelines();
 		initTiles();
+		initShadowMap();
 		mainLoop();
 	}
 
@@ -77,12 +80,12 @@ public:
 
 				pipelineDebugGBuff->use();
 
-				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE0);
-				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE1);
-				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE2);
-				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE3);
-				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE4);
-				gBuffer->bindTexture(FrameBuffer::Texture::Depth, GL_TEXTURE5);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::Normal, GL_TEXTURE0);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::Color, GL_TEXTURE1);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::MSSR, GL_TEXTURE2);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::SASS, GL_TEXTURE3);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::CC, GL_TEXTURE4);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::Depth, GL_TEXTURE5);
 
 				glUniformMatrix4fv(pipelineDebugGBuff->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 				glUniformMatrix4fv(pipelineDebugGBuff->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
@@ -95,12 +98,14 @@ public:
 
 				pipelineBRDF->use();
 
-				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE0);
-				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE1);
-				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE2);
-				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE3);
-				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE4);
-				gBuffer->bindTexture(FrameBuffer::Texture::Depth, GL_TEXTURE5);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::Normal, GL_TEXTURE0);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::Color, GL_TEXTURE1);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::MSSR, GL_TEXTURE2);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::SASS, GL_TEXTURE3);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::CC, GL_TEXTURE4);
+				gBuffer->bindTexture((uint32_t)GBuffer::Texture::Depth, GL_TEXTURE5);
+
+				shadowBuffer->bindTexture(GL_TEXTURE6);
 
 				glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 				glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
@@ -215,10 +220,9 @@ public:
 
 		pipelineGbuffer = new GeometryPipeline{ &GVertShader, &GFragShader };
 
-		gBuffer = new FrameBuffer{glm::ivec2(width, height)};
+		gBuffer = new GBuffer{glm::ivec2(width, height)};
 
 		Shader DeferredVertShader{ "./shaders/deferred_shader.vert", GL_VERTEX_SHADER };
-		
 
 		if (!debugGBuffer) {
 
@@ -233,6 +237,8 @@ public:
 			glUniform1i(pipelineBRDF->getAttributeLocation("gSASS"), 3);
 			glUniform1i(pipelineBRDF->getAttributeLocation("gCC"), 4);
 			glUniform1i(pipelineBRDF->getAttributeLocation("gDepth"), 5);
+
+			glUniform1i(pipelineBRDF->getAttributeLocation("shadowMap"), 6);
 		}
 		else {
 
@@ -248,6 +254,12 @@ public:
 			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gCC"), 4);
 			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gDepth"), 5);
 		}
+
+		Shader ShadowVertShader{ "./shaders/shadows_shader.vert", GL_VERTEX_SHADER };
+		Shader ShadowGeomShader{ "./shaders/shadows_shader.geom", GL_GEOMETRY_SHADER };
+		Shader ShadowFragShader{ "./shaders/shadows_shader.frag", GL_FRAGMENT_SHADER };
+
+		pipelineShadows = new GeometryPipeline{ &ShadowVertShader, &ShadowGeomShader, &ShadowFragShader };
 
 		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };
 		Shader NormGeomShader{ "./shaders/normals_shader.geom", GL_GEOMETRY_SHADER };
@@ -278,6 +290,31 @@ public:
 		for (auto & tile : tiles) {
 			tile.setInstances();
 		}
+	}
+
+	void initShadowMap() {
+		shadowBuffer = new ShadowBuffer{lights.size()};
+
+		pipelineShadows->use();
+
+		glViewport(0, 0, shadowBuffer->octSize, shadowBuffer->octSize);
+		shadowBuffer->startWrite();
+		glClear(GL_DEPTH_BUFFER_BIT);
+
+		for (auto light : lights) {
+			glUniform3fv(pipelineShadows->getAttributeLocation("lights.pos"), 1, &light.pos[0]);
+			glUniform3fv(pipelineShadows->getAttributeLocation("lights.color"), 1, &light.color[0]);
+			glUniform1f(pipelineShadows->getAttributeLocation("lights.brightness"), light.brightness);
+
+			glUniformMatrix4fv(pipelineShadows->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
+			glUniformMatrix4fv(pipelineShadows->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
+
+			for (const auto & tile : tiles) {
+				tile.draw(pipelineShadows);
+			}
+		}
+
+		shadowBuffer->endWrite();
 	}
 
 	void initInput() {

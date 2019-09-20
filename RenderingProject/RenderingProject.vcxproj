@@ -32,6 +32,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="FrameBuffer.hpp" />
+    <ClInclude Include="FrameBuffers.hpp" />
     <ClInclude Include="json.hpp" />
     <ClInclude Include="Material.hpp" />
     <ClInclude Include="Map.hpp" />

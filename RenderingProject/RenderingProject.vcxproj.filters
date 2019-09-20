@@ -80,5 +80,8 @@
     <ClInclude Include="Pipelines.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FrameBuffers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
