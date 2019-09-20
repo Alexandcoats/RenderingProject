@@ -13,19 +13,16 @@ uniform float sheenTint = 0.5;
 uniform float clearcoat = 0.0;
 uniform float clearcoatGloss = 1.0;
 
-in vec3 worldSpacePos;
 in vec3 norm;
 in vec2 UV;
 
-layout (location = 0) out vec3 gPosition;
-layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec4 gColor;
-layout (location = 3) out vec4 gMSSR;
-layout (location = 4) out vec4 gSASS;
-layout (location = 5) out vec2 gCC;
+layout (location = 0) out vec3 gNormal;
+layout (location = 1) out vec4 gColor;
+layout (location = 2) out vec4 gMSSR;
+layout (location = 3) out vec4 gSASS;
+layout (location = 4) out vec2 gCC;
 
 void main() {
-	gPosition = worldSpacePos;
 	gNormal = norm;
 	gColor = texture(texSampler, UV);
 	gMSSR = vec4(metallic, subsurface, specular, roughness);

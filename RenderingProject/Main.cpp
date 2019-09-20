@@ -77,16 +77,17 @@ public:
 
 				pipelineDebugGBuff->use();
 
-				gBuffer->bindTexture(FrameBuffer::Texture::Position, GL_TEXTURE0);
-				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE1);
-				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE2);
-				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE3);
-				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE4);
-				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE5);
+				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE0);
+				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE1);
+				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE2);
+				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE3);
+				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE4);
+				gBuffer->bindTexture(FrameBuffer::Texture::Depth, GL_TEXTURE5);
+
+				glUniformMatrix4fv(pipelineDebugGBuff->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
+				glUniformMatrix4fv(pipelineDebugGBuff->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
 
 				pipelineDebugGBuff->draw();
-
-				gBuffer->copyToSystemFramebuffer();
 			}
 			else {
 
@@ -94,12 +95,15 @@ public:
 
 				pipelineBRDF->use();
 
-				gBuffer->bindTexture(FrameBuffer::Texture::Position, GL_TEXTURE0);
-				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE1);
-				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE2);
-				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE3);
-				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE4);
-				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE5);
+				gBuffer->bindTexture(FrameBuffer::Texture::Normal, GL_TEXTURE0);
+				gBuffer->bindTexture(FrameBuffer::Texture::Color, GL_TEXTURE1);
+				gBuffer->bindTexture(FrameBuffer::Texture::MSSR, GL_TEXTURE2);
+				gBuffer->bindTexture(FrameBuffer::Texture::SASS, GL_TEXTURE3);
+				gBuffer->bindTexture(FrameBuffer::Texture::CC, GL_TEXTURE4);
+				gBuffer->bindTexture(FrameBuffer::Texture::Depth, GL_TEXTURE5);
+
+				glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
+				glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
 
 				glUniform1i(pipelineBRDF->getAttributeLocation("num_lights"), lights.size());
 
@@ -112,10 +116,9 @@ public:
 				glUniform3fv(pipelineBRDF->getAttributeLocation("camPos"), 1, &camera->pos[0]);
 
 				pipelineBRDF->draw();
-
-				gBuffer->copyToSystemFramebuffer();
-
 			}
+
+			gBuffer->copyToSystemFramebuffer();
 
 			if (showNormals) {
 				pipelineNormals->use();
@@ -224,12 +227,12 @@ public:
 			pipelineBRDF = new DeferredPipeline{ &DeferredVertShader, &BRDFFragShader };
 			pipelineBRDF->use();
 
-			glUniform1i(pipelineBRDF->getAttributeLocation("gPosition"), 0);
-			glUniform1i(pipelineBRDF->getAttributeLocation("gNormal"), 1);
-			glUniform1i(pipelineBRDF->getAttributeLocation("gColor"), 2);
-			glUniform1i(pipelineBRDF->getAttributeLocation("gMSSR"), 3);
-			glUniform1i(pipelineBRDF->getAttributeLocation("gSASS"), 4);
-			glUniform1i(pipelineBRDF->getAttributeLocation("gCC"), 5);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gNormal"), 0);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gColor"), 1);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gMSSR"), 2);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gSASS"), 3);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gCC"), 4);
+			glUniform1i(pipelineBRDF->getAttributeLocation("gDepth"), 5);
 		}
 		else {
 
@@ -238,12 +241,12 @@ public:
 			pipelineDebugGBuff = new DeferredPipeline{ &DeferredVertShader, &GBuffFragShader };
 			pipelineDebugGBuff->use();
 
-			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gPosition"), 0);
-			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gNormal"), 1);
-			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gColor"), 2);
-			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gMSSR"), 3);
-			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gSASS"), 4);
-			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gCC"), 5);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gNormal"), 0);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gColor"), 1);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gMSSR"), 2);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gSASS"), 3);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gCC"), 4);
+			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gDepth"), 5);
 		}
 
 		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };

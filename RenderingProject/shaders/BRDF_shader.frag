@@ -1,11 +1,13 @@
 #version 450
 
-uniform sampler2D gPosition;
+uniform mat4 p;
+uniform mat4 v;
 uniform sampler2D gNormal;
 uniform sampler2D gColor;
 uniform sampler2D gMSSR;
 uniform sampler2D gSASS;
 uniform sampler2D gCC;
+uniform sampler2D gDepth;
 
 uniform vec3 camPos;
 
@@ -146,8 +148,22 @@ vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	return ((1.0/PI) * mix(F_d, ss, subsurface) * C_dlin + F_sheen) * (1.0-metallic) + G_s*F_s*D_s + 0.25*clearcoat*G_r*F_r*D_r;
 }
 
+vec3 worldPosFromDepth() {
+    float z = texture(gDepth, UV).x * 2.0 - 1.0;
+
+    vec4 clipSpacePosition = vec4(UV * 2.0 - 1.0, z, 1.0);
+    vec4 viewSpacePosition = inverse(p) * clipSpacePosition;
+
+    // Perspective division
+    viewSpacePosition /= viewSpacePosition.w;
+
+    vec4 worldSpacePosition = inverse(v) * viewSpacePosition;
+
+    return worldSpacePosition.xyz;
+}
+
 void main() {
-	vec3 worldSpacePos = texture(gPosition, UV).rgb;
+	vec3 worldSpacePos = worldPosFromDepth();
 	vec3 normal = normalize(texture(gNormal, UV).rgb);
 	vec3 worldSpaceTangent, worldSpaceBitangent;
 	computeTangentVectors(normal, worldSpaceTangent, worldSpaceBitangent);

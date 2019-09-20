@@ -7,7 +7,6 @@ class FrameBuffer
 public:
 	enum class Texture : uint32_t
 	{
-		Position,
 		Normal,
 		Color,
 		MSSR,
