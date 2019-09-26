@@ -1,6 +1,7 @@
 #pragma once
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 #include <iostream>
 #include "Map.hpp"
@@ -42,10 +43,10 @@ public:
 		map.saveMap("./textures/output.png");
 		
 		initWindow();
-		initInput();
 		initPipelines();
 		initTiles();
 		initShadowMap();
+		initInput();
 		mainLoop();
 	}
 
@@ -56,8 +57,6 @@ public:
 
 			int width, height;
 			glfwGetFramebufferSize(window, &width, &height);
-
-			glViewport(0, 0, width, height);
 
 			gBuffer->startWrite();
 
@@ -255,11 +254,13 @@ public:
 			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gDepth"), 5);
 		}
 
-		Shader ShadowVertShader{ "./shaders/shadows_shader.vert", GL_VERTEX_SHADER };
-		Shader ShadowGeomShader{ "./shaders/shadows_shader.geom", GL_GEOMETRY_SHADER };
-		Shader ShadowFragShader{ "./shaders/shadows_shader.frag", GL_FRAGMENT_SHADER };
+		Shader ShadowVertShader{ "./shaders/shadow_shader.vert", GL_VERTEX_SHADER };
+		Shader ShadowFragShader{ "./shaders/shadow_shader.frag", GL_FRAGMENT_SHADER };
 
-		pipelineShadows = new GeometryPipeline{ &ShadowVertShader, &ShadowGeomShader, &ShadowFragShader };
+		pipelineShadows = new GeometryPipeline{ &ShadowVertShader, &ShadowFragShader };
+		pipelineShadows->use();
+
+		glUniform1i(pipelineShadows->getAttributeLocation("shadowMap"), 0);
 
 		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };
 		Shader NormGeomShader{ "./shaders/normals_shader.geom", GL_GEOMETRY_SHADER };
@@ -293,28 +294,60 @@ public:
 	}
 
 	void initShadowMap() {
-		shadowBuffer = new ShadowBuffer{lights.size()};
+		shadowBuffer = new ShadowBuffer(lights.size());
 
 		pipelineShadows->use();
 
-		glViewport(0, 0, shadowBuffer->octSize, shadowBuffer->octSize);
-		shadowBuffer->startWrite();
-		glClear(GL_DEPTH_BUFFER_BIT);
+		//shadowBuffer->startWrite();
 
-		for (auto light : lights) {
-			glUniform3fv(pipelineShadows->getAttributeLocation("lights.pos"), 1, &light.pos[0]);
-			glUniform3fv(pipelineShadows->getAttributeLocation("lights.color"), 1, &light.color[0]);
-			glUniform1f(pipelineShadows->getAttributeLocation("lights.brightness"), light.brightness);
+		auto p = glm::perspective(glm::radians(90.0f), 0.5f, 0.1f, 256.0f);
+		glUniformMatrix4fv(pipelineShadows->getAttributeLocation("p"), 1, GL_FALSE, &p[0][0]);
 
-			glUniformMatrix4fv(pipelineShadows->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
-			glUniformMatrix4fv(pipelineShadows->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
+		auto up = glm::vec3(0.0f, 1.0f, 0.0f);
+		
+		for (int l = 0; l < lights.size(); ++l) {
 
-			for (const auto & tile : tiles) {
-				tile.draw(pipelineShadows);
+			shadowBuffer->bindLayer(0, l);
+
+			auto pos = lights[l].pos;
+			//auto pos = glm::vec3(10.0f, 3.0f, 10.0f);
+
+			glUniform3fv(pipelineShadows->getAttributeLocation("lightPos"), 1, &pos[0]);
+
+			glm::vec3 dirVectors[8] = { {1.0f, 1.0f, 0.0f},
+										{0.0f, 1.0f, 1.0f},
+										{-1.0f, 1.0f, 0.0f},
+										{0.0f, 1.0f, -1.0f},
+										{1.0f, -1.0f, 0.0f},
+										{0.0f, -1.0f, 1.0f},
+										{-1.0f, -1.0f, 0.0f},
+										{0.0f, -1.0f, -1.0f} };
+
+			for (int i = 0; i < 8; ++i) {
+
+				glClear(GL_DEPTH_BUFFER_BIT);
+
+				auto dir = glm::normalize(dirVectors[i]);
+				
+				auto v = glm::lookAt(pos, pos + dir, up);
+				
+				glUniformMatrix4fv(pipelineShadows->getAttributeLocation("v"), 1, GL_FALSE, &v[0][0]);
+
+				for (const auto & tile : tiles) {
+					tile.draw(pipelineShadows);
+					glMemoryBarrier(GL_ALL_BARRIER_BITS);
+				}
 			}
+
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
+			auto pixels = new float[512*512];
+			glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * 512 * 512, pixels);
+
+			stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), 512, 512, 4, pixels, sizeof(float) * 512);
 		}
 
-		shadowBuffer->endWrite();
+		//shadowBuffer->endWrite();
 	}
 
 	void initInput() {
@@ -342,7 +375,7 @@ public:
 		app->width = width;
 		app->height = height;
 
-		glViewport(0, 0, width, height);
+		app->gBuffer->resolution = glm::ivec2(width, height);
 
 		app->camera->resize(width, height);
 

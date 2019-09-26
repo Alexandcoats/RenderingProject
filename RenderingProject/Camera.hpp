@@ -53,7 +53,6 @@ public:
 
 	void resize(float width, float height) {
 		projection = glm::perspective(glm::radians(50.0f), width / height, 0.1f, 256.0f);
-		//projection = glm::ortho(-5.f, 5.f, 5.f, -5.f);
 	}
 
 	void translate(Direction direction, float magnitude) {

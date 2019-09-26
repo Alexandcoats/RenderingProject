@@ -13,6 +13,7 @@ uniform float sheenTint = 0.5;
 uniform float clearcoat = 0.0;
 uniform float clearcoatGloss = 1.0;
 
+in vec3 worldSpacePos;
 in vec3 norm;
 in vec2 UV;
 

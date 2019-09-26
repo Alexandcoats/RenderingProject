@@ -70,6 +70,7 @@ public:
 	}
 
 	void startWrite() {
+		glViewport(0, 0, resolution.x, resolution.y);
 		glBindFramebuffer(GL_FRAMEBUFFER, ID);
 		unsigned int a[5] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4 };
 		glDrawBuffers(5, a);
@@ -86,27 +87,32 @@ public:
 	unsigned int octmapTex;
 	const int octSize = 512;
 
-	ShadowBuffer(int numLights) {
-		glGenFramebuffers(1, &ID);
-		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+	ShadowBuffer(unsigned int numLights) {
+		//glGenFramebuffers(1, &ID);
+		//glBindFramebuffer(GL_FRAMEBUFFER, ID);
 
 		glGenTextures(1, &octmapTex);
 
 		glBindTexture(GL_TEXTURE_2D_ARRAY, octmapTex);
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGB16F, octSize, octSize, numLights, 0, GL_RGB, GL_FLOAT, NULL);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, octSize, octSize, numLights, 0, GL_RED, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, octmapTex, 0);
+		//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, octmapTex, 0);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	void bindLayer(const int imageUnit, unsigned int layer) {
+		glBindImageTexture(imageUnit, octmapTex, 0, GL_FALSE, layer, GL_WRITE_ONLY, GL_R32F);
 	}
 
 	void bindTexture(const int textureUnit) {
 		glActiveTexture(textureUnit);
-		glBindTexture(GL_TEXTURE_3D, octmapTex);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, octmapTex);
 	}
 
 	void startWrite() {
-		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		//glViewport(0, 0, octSize, octSize);
+		//glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	}
 };

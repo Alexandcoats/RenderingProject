@@ -1,31 +1,24 @@
 #version 450
 
-struct Light {
-	vec3 pos;
-	vec3 color;
-	float brightness;
-};
-uniform Light light;
+uniform vec3 lightPos;
 
-layout (location = 0) out vec3 shadowDepth;
+layout (r32f) writeonly uniform image2D shadowMap;
 
-float signNotZero(in float k) {
-    return k >= 0.0 ? 1.0 : -1.0;
-}
-
-vec2 signNotZero(in vec2 v) {
-    return vec2( signNotZero(v.x), signNotZero(v.y) );
-}
+in vec3 worldSpacePos;
 
 vec2 octEncode(in vec3 v) {
     float l1norm = abs(v.x) + abs(v.y) + abs(v.z);
     vec2 result = v.xy * (1.0/l1norm);
     if (v.z < 0.0) {
-        result = (1.0 - abs(result.yx)) * signNotZero(result.xy);
+        result = abs((1.0 - abs(result.yx)));
     }
     return result;
 }
 
 void main() {
-	
+	vec3 lightDir = lightPos - worldSpacePos;
+	if(abs(lightDir.x) + abs(lightDir.y) > 1.0) return;
+	ivec2 depthCoord = ivec2(512 * ((octEncode(lightDir) + 1.0) / 2.0));
+	// Need to store only if part of this octant
+	imageStore(shadowMap, depthCoord, vec4(gl_FragCoord.z));
 }

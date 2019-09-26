@@ -9,7 +9,7 @@ uniform sampler2D gSASS;
 uniform sampler2D gCC;
 uniform sampler2D gDepth;
 
-uniform sampler3D shadowMap;
+uniform sampler2DArray shadowMap;
 
 uniform vec3 camPos;
 
@@ -18,9 +18,9 @@ struct Light {
 	vec3 color;
 	float brightness;
 };
-const int max_lights = 64;
-uniform int num_lights = 0;
-uniform Light lights[max_lights];
+const int maxLights = 64;
+uniform int numLights = 0;
+uniform Light lights[maxLights];
 
 vec3 baseColor = vec3(.16);
 float metallic = 0.0;
@@ -95,22 +95,6 @@ vec3 mon2lin(vec3 v) {
 	return vec3(pow(v.x, 2.2), pow(v.y, 2.2), pow(v.z, 2.2));
 }
 
-float signNotZero(in float k) {
-    return k >= 0.0 ? 1.0 : -1.0;
-}
-
-vec2 signNotZero(in vec2 v) {
-    return vec2( signNotZero(v.x), signNotZero(v.y) );
-}
-
-vec3 finalDecode(float x, float y) {
-    vec3 v = vec3(x, y, 1.0 - abs(x) - abs(y));
-    if (v.z < 0) {
-        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
-    }
-    return normalize(v);
-}
-
 vec3 BRDF(vec3 L, vec3 V, vec3 N, vec3 X, vec3 Y) {
 	float NdotL = dot(N, L);
 	float NdotV = dot(N, V);
@@ -180,6 +164,43 @@ vec3 worldPosFromDepth() {
     return worldSpacePosition.xyz;
 }
 
+float signNotZero(in float k) {
+    return k >= 0.0 ? 1.0 : -1.0;
+}
+
+vec2 signNotZero(in vec2 v) {
+    return vec2( signNotZero(v.x), signNotZero(v.y) );
+}
+
+vec3 octDecode(float x, float y) {
+    vec3 v = vec3(x, y, 1.0 - abs(x) - abs(y));
+    if (v.z < 0) {
+        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
+    }
+    return normalize(v);
+}
+
+vec2 octEncode(in vec3 v) {
+    float l1norm = abs(v.x) + abs(v.y) + abs(v.z);
+    vec2 result = v.xy * (1.0/l1norm);
+    if (v.z < 0.0) {
+        result = (1.0 - abs(result.yx)) * signNotZero(result.xy);
+    }
+    return result;
+}
+
+float getShadow(vec3 pos) {
+	float shadow = 0.0;
+	for(int i = 0; i < numLights; ++i){
+		vec3 fragToLight = pos - lights[i].pos;
+		float closestDepth = texture(shadowMap, vec3(octEncode(fragToLight), i)).r;
+		float currentDepth = length(fragToLight);
+		shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+		if(shadow) return shadow;
+	}
+	return shadow;
+}
+
 void main() {
 	vec3 worldSpacePos = worldPosFromDepth();
 	vec3 normal = normalize(texture(gNormal, UV).rgb);
@@ -199,14 +220,14 @@ void main() {
 
 	vec3 viewDir = normalize(camPos - worldSpacePos);
 
-	for(int i = 0; i < num_lights; ++i) {
+	for(int i = 0; i < numLights; ++i) {
 		float falloff = sqr(lights[i].pos.x - worldSpacePos.x) + sqr(lights[i].pos.y - worldSpacePos.y) + sqr(lights[i].pos.z - worldSpacePos.z);
 		if(falloff > lights[i].brightness) continue;
 		vec3 lightDir = normalize(lights[i].pos - worldSpacePos);
 		vec3 b = max(BRDF(lightDir, viewDir, normal, worldSpaceTangent, worldSpaceBitangent), vec3(0.0));
 		b *= dot(lightDir, normal);
 		b *= (1.0 / falloff);
-		b *= lights[i].color * lights[i].brightness;
+		b *= lights[i].color * lights[i].brightness * getShadow(worldSpacePos);
 		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 1.0);
 	}
 }

@@ -9,6 +9,7 @@ in vec3 normal;
 in vec2 texCoord;
 in mat4 m;
 
+out vec3 worldSpacePos;
 out vec3 norm;
 out vec2 UV;
 
@@ -17,6 +18,7 @@ void main() {
 	mat3 n = transpose(inverse(mat3(thisM)));
 	norm = n * normalize(normal);
 	UV = texCoord;
+	worldSpacePos = vec3(thisM * vec4(pos, 1.0));
 
 	gl_Position = p * v * thisM * vec4(pos, 1.0);
 }
