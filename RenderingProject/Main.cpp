@@ -2,6 +2,7 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform2.hpp>
 #include <chrono>
 #include <iostream>
 #include "Map.hpp"
@@ -19,7 +20,7 @@ class Application {
 	GeometryPipeline* pipelineGbuffer;
 	DeferredPipeline* pipelineBRDF;
 	DeferredPipeline* pipelineDebugGBuff;
-	GeometryPipeline* pipelineShadows;
+	GeometryPipeline* pipelineDepth;
 	GeometryPipeline* pipelineNormals;
 	Camera* camera;
 	GBuffer* gBuffer;
@@ -254,13 +255,11 @@ public:
 			glUniform1i(pipelineDebugGBuff->getAttributeLocation("gDepth"), 5);
 		}
 
-		Shader ShadowVertShader{ "./shaders/shadow_shader.vert", GL_VERTEX_SHADER };
-		Shader ShadowFragShader{ "./shaders/shadow_shader.frag", GL_FRAGMENT_SHADER };
+		Shader DepthVertShader{ "./shaders/depth_shader.vert", GL_VERTEX_SHADER };
+		Shader DepthFragShader{ "./shaders/depth_shader.frag", GL_FRAGMENT_SHADER };
 
-		pipelineShadows = new GeometryPipeline{ &ShadowVertShader, &ShadowFragShader };
-		pipelineShadows->use();
-
-		glUniform1i(pipelineShadows->getAttributeLocation("shadowMap"), 0);
+		pipelineDepth = new GeometryPipeline{ &DepthVertShader, &DepthFragShader };
+		pipelineDepth->use();
 
 		Shader NormVertShader{ "./shaders/normals_shader.vert", GL_VERTEX_SHADER };
 		Shader NormGeomShader{ "./shaders/normals_shader.geom", GL_GEOMETRY_SHADER };
@@ -296,58 +295,78 @@ public:
 	void initShadowMap() {
 		shadowBuffer = new ShadowBuffer(lights.size());
 
-		pipelineShadows->use();
+		pipelineDepth->use();
 
-		//shadowBuffer->startWrite();
-
-		auto p = glm::perspective(glm::radians(90.0f), 0.5f, 0.1f, 256.0f);
-		glUniformMatrix4fv(pipelineShadows->getAttributeLocation("p"), 1, GL_FALSE, &p[0][0]);
+		shadowBuffer->startWrite();
 
 		auto up = glm::vec3(0.0f, 1.0f, 0.0f);
 		
 		for (int l = 0; l < lights.size(); ++l) {
 
-			shadowBuffer->bindLayer(0, l);
-
 			auto pos = lights[l].pos;
 			//auto pos = glm::vec3(10.0f, 3.0f, 10.0f);
 
-			glUniform3fv(pipelineShadows->getAttributeLocation("lightPos"), 1, &pos[0]);
+			glm::vec3 dirVectors[8] = { {-1.0f, 1.0f, 1.0f}, // quad 1, forward oct
+										{-1.0f, 1.0f, -1.0f}, // quad 1, rear oct
+										{1.0f, 1.0f, 1.0f}, // quad 2, forward oct
+										{1.0f, 1.0f, -1.0f}, // quad 2, rear oct
+										{1.0f, -1.0f, 1.0f}, // quad 3 forward oct
+										{1.0f, -1.0f, -1.0f}, // quad 3, rear oct
+										{-1.0f, -1.0f, 1.0f}, // quad 4, forward oct
+										{-1.0f, -1.0f, -1.0f} }; // quad 4, rear oct
 
-			glm::vec3 dirVectors[8] = { {1.0f, 1.0f, 0.0f},
-										{0.0f, 1.0f, 1.0f},
-										{-1.0f, 1.0f, 0.0f},
-										{0.0f, 1.0f, -1.0f},
-										{1.0f, -1.0f, 0.0f},
-										{0.0f, -1.0f, 1.0f},
-										{-1.0f, -1.0f, 0.0f},
-										{0.0f, -1.0f, -1.0f} };
+			float octDisplacements[8] = { 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f };
+
+			float octSkews[8] = { 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f };
 
 			for (int i = 0; i < 8; ++i) {
 
 				glClear(GL_DEPTH_BUFFER_BIT);
 
+				glUniform1i(pipelineDepth->getAttributeLocation("octant"), i);
+
+				auto p = glm::perspective(glm::radians(90.0f), 0.5f, 0.1f, 256.0f);
+
+				// Skew the perspective matrix according to the octant
+
+				// In clip space, we are in [-1, 1], so we need to move the shape up/down 1 to be in [0, 2] or [-2, 0]
+				// This will mean any shear will affect the vertices at y == +-2 by 2 * the shear amount
+				glm::mat4 displace = glm::translate(glm::mat4(), glm::vec3(0.0f, octDisplacements[i], 0.0f));
+				// So, we use a shear amount of +-.5, because we want those verts to shear by 1
+				glm::mat4 shear = glm::shearX3D(glm::mat4(), octSkews[i] * 0.5f, 0.0f);
+
+				// Move, shear, then move back
+				p = glm::inverse(displace) * shear * displace * p;
+
+				glUniformMatrix4fv(pipelineDepth->getAttributeLocation("p"), 1, GL_FALSE, &p[0][0]);
+
 				auto dir = glm::normalize(dirVectors[i]);
 				
 				auto v = glm::lookAt(pos, pos + dir, up);
 				
-				glUniformMatrix4fv(pipelineShadows->getAttributeLocation("v"), 1, GL_FALSE, &v[0][0]);
+				glUniformMatrix4fv(pipelineDepth->getAttributeLocation("v"), 1, GL_FALSE, &v[0][0]);
 
 				for (const auto & tile : tiles) {
-					tile.draw(pipelineShadows);
-					glMemoryBarrier(GL_ALL_BARRIER_BITS);
+					tile.draw(pipelineDepth);
 				}
+
+				auto pix = new float[256 * 256];
+				glGetTextureSubImage(shadowBuffer->depthTex, 0, 0, 0, 0, 256, 256, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * 256 * 256, pix);
+
+				stbi_write_png("depth.png", 256, 256, 4, pix, sizeof(float) * 256);
+
+				shadowBuffer->copyQuadrant(i / 2, l);
+
+				auto pixels = new float[512 * 512];
+				glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * 512 * 512, pixels);
+
+				stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), 512, 512, 4, pixels, sizeof(float) * 512);
 			}
 
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-			auto pixels = new float[512*512];
-			glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * 512 * 512, pixels);
-
-			stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), 512, 512, 4, pixels, sizeof(float) * 512);
+			
 		}
 
-		//shadowBuffer->endWrite();
+		shadowBuffer->endWrite();
 	}
 
 	void initInput() {

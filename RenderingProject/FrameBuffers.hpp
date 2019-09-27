@@ -85,25 +85,33 @@ public:
 class ShadowBuffer : public FrameBuffer {
 public:
 	unsigned int octmapTex;
+	unsigned int depthTex;
 	const int octSize = 512;
 
 	ShadowBuffer(unsigned int numLights) {
-		//glGenFramebuffers(1, &ID);
-		//glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		glGenFramebuffers(1, &ID);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+
+		glGenTextures(1, &depthTex);
+
+		glBindTexture(GL_TEXTURE_2D, depthTex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, octSize/2, octSize/2, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+
+		glDrawBuffer(GL_NONE);
+		glReadBuffer(GL_NONE);
 
 		glGenTextures(1, &octmapTex);
 
 		glBindTexture(GL_TEXTURE_2D_ARRAY, octmapTex);
-		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, octSize, octSize, numLights, 0, GL_RED, GL_FLOAT, NULL);
+		glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_DEPTH_COMPONENT32F, octSize, octSize, numLights, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		//glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, octmapTex, 0);
 
-		//glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	}
-
-	void bindLayer(const int imageUnit, unsigned int layer) {
-		glBindImageTexture(imageUnit, octmapTex, 0, GL_FALSE, layer, GL_WRITE_ONLY, GL_R32F);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
 	}
 
 	void bindTexture(const int textureUnit) {
@@ -112,7 +120,24 @@ public:
 	}
 
 	void startWrite() {
-		//glViewport(0, 0, octSize, octSize);
-		//glBindFramebuffer(GL_FRAMEBUFFER, ID);
+		glViewport(0, 0, octSize/2, octSize/2);
+		glBindFramebuffer(GL_FRAMEBUFFER, ID);
+	}
+
+	void copyQuadrant(int quadrant, unsigned int layer) {
+		int xoffset = 0, yoffset = 0;
+		if (quadrant == 1) {
+			xoffset = octSize / 2;
+		}
+		else if (quadrant == 2) {
+			xoffset = octSize / 2;
+			yoffset = octSize / 2;
+		}
+		else if (quadrant == 3) {
+			yoffset = octSize / 2;
+		}
+		//glReadBuffer(GL_BACK);
+		glCopyTextureSubImage3D(octmapTex, 0, xoffset, yoffset, layer, 0, 0, octSize / 2, octSize / 2);
+		//glReadBuffer(GL_NONE);
 	}
 };
