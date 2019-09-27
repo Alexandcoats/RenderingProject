@@ -187,6 +187,7 @@ public:
 
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 		//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 		window = glfwCreateWindow(INIT_WIDTH, INIT_HEIGHT, "Rendering Lunch and Learn", nullptr, nullptr);
@@ -206,6 +207,11 @@ public:
 			throw std::runtime_error("Failed initialize OpenGL extensions");
 		}
 		glfwSwapInterval(1);
+
+		glEnable(GL_DEBUG_OUTPUT);
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(glDebugOutput, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 
 		glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
@@ -350,17 +356,17 @@ public:
 					tile.draw(pipelineDepth);
 				}
 
-				auto pix = new float[256 * 256];
-				glGetTextureSubImage(shadowBuffer->depthTex, 0, 0, 0, 0, 256, 256, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * 256 * 256, pix);
+				//auto pix = new float[256 * 256];
+				//glGetTextureSubImage(shadowBuffer->depthTex, 0, 0, 0, 0, 256, 256, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * 256 * 256, pix);
 
-				stbi_write_png("depth.png", 256, 256, 4, pix, sizeof(float) * 256);
+				//stbi_write_png("depth.png", 256, 256, 4, pix, sizeof(float) * 256);
 
 				shadowBuffer->copyQuadrant(i / 2, l);
 
-				auto pixels = new float[512 * 512];
-				glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * 512 * 512, pixels);
+				auto pixels = new char[512 * 512];
+				glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, sizeof(char) * 512 * 512, pixels);
 
-				stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), 512, 512, 4, pixels, sizeof(float) * 512);
+				stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), 512, 512, 1, pixels, sizeof(char) * 512);
 			}
 
 			
@@ -379,6 +385,53 @@ public:
 		glfwSetKeyCallback(window, handleKeyInput);
 		glfwSetCursorPosCallback(window, handleCursorInput);
 		glfwSetMouseButtonCallback(window, handleMouseInput);
+	}
+
+	static void APIENTRY glDebugOutput(GLenum source,
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar *message,
+		const void *userParam)
+	{
+		// ignore non-significant error/warning codes
+		if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+
+		std::cout << "---------------" << std::endl;
+		std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+		switch (source)
+		{
+		case GL_DEBUG_SOURCE_API:             std::cout << "Source: API"; break;
+		case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   std::cout << "Source: Window System"; break;
+		case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader Compiler"; break;
+		case GL_DEBUG_SOURCE_THIRD_PARTY:     std::cout << "Source: Third Party"; break;
+		case GL_DEBUG_SOURCE_APPLICATION:     std::cout << "Source: Application"; break;
+		case GL_DEBUG_SOURCE_OTHER:           std::cout << "Source: Other"; break;
+		} std::cout << std::endl;
+
+		switch (type)
+		{
+		case GL_DEBUG_TYPE_ERROR:               std::cout << "Type: Error"; break;
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Deprecated Behaviour"; break;
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  std::cout << "Type: Undefined Behaviour"; break;
+		case GL_DEBUG_TYPE_PORTABILITY:         std::cout << "Type: Portability"; break;
+		case GL_DEBUG_TYPE_PERFORMANCE:         std::cout << "Type: Performance"; break;
+		case GL_DEBUG_TYPE_MARKER:              std::cout << "Type: Marker"; break;
+		case GL_DEBUG_TYPE_PUSH_GROUP:          std::cout << "Type: Push Group"; break;
+		case GL_DEBUG_TYPE_POP_GROUP:           std::cout << "Type: Pop Group"; break;
+		case GL_DEBUG_TYPE_OTHER:               std::cout << "Type: Other"; break;
+		} std::cout << std::endl;
+
+		switch (severity)
+		{
+		case GL_DEBUG_SEVERITY_HIGH:         std::cout << "Severity: high"; break;
+		case GL_DEBUG_SEVERITY_MEDIUM:       std::cout << "Severity: medium"; break;
+		case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
+		case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
+		} std::cout << std::endl;
+		std::cout << std::endl;
 	}
 
 	static void onWindowError(int error, const char* description)

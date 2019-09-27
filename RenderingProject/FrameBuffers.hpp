@@ -125,19 +125,33 @@ public:
 	}
 
 	void copyQuadrant(int quadrant, unsigned int layer) {
+		const int quadSize = octSize / 2;
 		int xoffset = 0, yoffset = 0;
 		if (quadrant == 1) {
-			xoffset = octSize / 2;
+			xoffset = quadSize;
 		}
 		else if (quadrant == 2) {
-			xoffset = octSize / 2;
-			yoffset = octSize / 2;
+			xoffset = quadSize;
+			yoffset = quadSize;
 		}
 		else if (quadrant == 3) {
-			yoffset = octSize / 2;
+			yoffset = quadSize;
 		}
 		//glReadBuffer(GL_BACK);
-		glCopyTextureSubImage3D(octmapTex, 0, xoffset, yoffset, layer, 0, 0, octSize / 2, octSize / 2);
+		//glCopyTextureSubImage3D(octmapTex, 0, xoffset, yoffset, layer, 0, 0, octSize / 2, octSize / 2);
 		//glReadBuffer(GL_NONE);
+
+		auto depthPix = new float[quadSize * quadSize];
+		glGetTextureSubImage(depthTex, 0, 0, 0, 0, quadSize, quadSize, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * quadSize * quadSize, depthPix);
+
+		auto octPix = new float[quadSize * quadSize];
+		glGetTextureSubImage(octmapTex, 0, xoffset, yoffset, layer, quadSize, quadSize, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * quadSize * quadSize, octPix);
+
+		for (int i = 0; i < quadSize * quadSize; ++i) {
+			if (!octPix[i]) octPix[i] = depthPix[i];
+			else if(octPix[i] != depthPix[i]) octPix[i] = octPix[i] * depthPix[i];
+		}
+
+		glTextureSubImage3D(octmapTex, 0, xoffset, yoffset, layer, quadSize, quadSize, 1, GL_DEPTH_COMPONENT, GL_FLOAT, octPix);
 	}
 };
