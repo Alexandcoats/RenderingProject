@@ -335,11 +335,11 @@ public:
 
 				for (const auto & tile : tiles) {
 					tile.draw(pipelineShadows);
-					glMemoryBarrier(GL_ALL_BARRIER_BITS);
+					//glMemoryBarrier(GL_ALL_BARRIER_BITS);
 				}
 			}
 
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			//glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
 			auto pixels = new float[512*512];
 			glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * 512 * 512, pixels);

@@ -1,5 +1,7 @@
 #version 450
 
+layout(early_fragment_tests) in;
+
 uniform vec3 lightPos;
 
 layout (r32f) writeonly uniform image2D shadowMap;
