@@ -306,32 +306,36 @@ public:
 		shadowBuffer->startWrite();
 
 		auto up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		glm::vec3 dirVectors[8] = { {-1.0f, 1.0f, 1.0f}, // quad 1, forward oct
+									{-1.0f, 1.0f, -1.0f}, // quad 1, rear oct
+									{1.0f, 1.0f, 1.0f}, // quad 2, forward oct
+									{1.0f, 1.0f, -1.0f}, // quad 2, rear oct
+									{1.0f, -1.0f, 1.0f}, // quad 3 forward oct
+									{1.0f, -1.0f, -1.0f}, // quad 3, rear oct
+									{-1.0f, -1.0f, 1.0f}, // quad 4, forward oct
+									{-1.0f, -1.0f, -1.0f} }; // quad 4, rear oct
+
+		float octDisplacements[8] = { 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f };
+		float octSkews[8] =			{ 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f };
+		float octRotations[8] =		{ 0.0f, 90.0f, 0.0f, -90.0f, 0.0f, 90.0f, 0.0f, -90.0f };
 		
 		for (int l = 0; l < lights.size(); ++l) {
 
 			auto pos = lights[l].pos;
-			//auto pos = glm::vec3(10.0f, 3.0f, 10.0f);
 
-			glm::vec3 dirVectors[8] = { {-1.0f, 1.0f, 1.0f}, // quad 1, forward oct
-										{-1.0f, 1.0f, -1.0f}, // quad 1, rear oct
-										{1.0f, 1.0f, 1.0f}, // quad 2, forward oct
-										{1.0f, 1.0f, -1.0f}, // quad 2, rear oct
-										{1.0f, -1.0f, 1.0f}, // quad 3 forward oct
-										{1.0f, -1.0f, -1.0f}, // quad 3, rear oct
-										{-1.0f, -1.0f, 1.0f}, // quad 4, forward oct
-										{-1.0f, -1.0f, -1.0f} }; // quad 4, rear oct
-
-			float octDisplacements[8] = { 1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f };
-
-			float octSkews[8] = { 1.0f, -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f };
+			auto p = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 256.0f);
 
 			for (int i = 0; i < 8; ++i) {
+
+				// Need to offset this position as the frustum plane is slightly "higher" than the triangle centroid 
+				// centroid = (.33, .33, .33)
+				// frustum center = (.25, .5, .25)
+				pos.y += octDisplacements[i] * (0.5f - 0.33f);
 
 				glClear(GL_DEPTH_BUFFER_BIT);
 
 				glUniform1i(pipelineDepth->getAttributeLocation("octant"), i);
-
-				auto p = glm::perspective(glm::radians(90.0f), 0.5f, 0.1f, 256.0f);
 
 				// Skew the perspective matrix according to the octant
 
@@ -340,9 +344,11 @@ public:
 				glm::mat4 displace = glm::translate(glm::mat4(), glm::vec3(0.0f, octDisplacements[i], 0.0f));
 				// So, we use a shear amount of +-.5, because we want those verts to shear by 1
 				glm::mat4 shear = glm::shearX3D(glm::mat4(), octSkews[i] * 0.5f, 0.0f);
+				// Need to rotate the back buffers to align on the map
+				glm::mat4 rotate = glm::rotate(glm::radians(octRotations[i]), glm::vec3(0.0f, 0.0f, 1.0f));
 
-				// Move, shear, then move back
-				p = glm::inverse(displace) * shear * displace * p;
+				// Move, shear, move back, then rotate
+				p = rotate * glm::inverse(displace) * shear * displace * p;
 
 				glUniformMatrix4fv(pipelineDepth->getAttributeLocation("p"), 1, GL_FALSE, &p[0][0]);
 
@@ -356,10 +362,10 @@ public:
 					tile.draw(pipelineDepth);
 				}
 
-				//auto pix = new float[256 * 256];
-				//glGetTextureSubImage(shadowBuffer->depthTex, 0, 0, 0, 0, 256, 256, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * 256 * 256, pix);
+				//auto pix = new char[256 * 256];
+				//glGetTextureSubImage(shadowBuffer->depthTex, 0, 0, 0, 0, 256, 256, 1, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, sizeof(char) * 256 * 256, pix);
 
-				//stbi_write_png("depth.png", 256, 256, 4, pix, sizeof(float) * 256);
+				//stbi_write_png("depth.png", 256, 256, 1, pix, sizeof(char) * 256);
 
 				shadowBuffer->copyQuadrant(i / 2, l);
 

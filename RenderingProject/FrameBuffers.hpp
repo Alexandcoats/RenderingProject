@@ -148,8 +148,9 @@ public:
 		glGetTextureSubImage(octmapTex, 0, xoffset, yoffset, layer, quadSize, quadSize, 1, GL_DEPTH_COMPONENT, GL_FLOAT, sizeof(float) * quadSize * quadSize, octPix);
 
 		for (int i = 0; i < quadSize * quadSize; ++i) {
-			if (!octPix[i]) octPix[i] = depthPix[i];
-			else if(octPix[i] != depthPix[i]) octPix[i] = octPix[i] * depthPix[i];
+			int j = quadSize*(quadSize - (i / quadSize) - 1) + (i % quadSize); // Get index with inverted y
+			if (!octPix[i]) octPix[i] = depthPix[j];
+			else if(octPix[i] != depthPix[j]) octPix[i] = octPix[i] * depthPix[j];
 		}
 
 		glTextureSubImage3D(octmapTex, 0, xoffset, yoffset, layer, quadSize, quadSize, 1, GL_DEPTH_COMPONENT, GL_FLOAT, octPix);
