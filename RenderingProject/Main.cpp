@@ -303,6 +303,14 @@ public:
 
 		pipelineDepth->use();
 
+		float frustumY = 2.0f * glm::distance(glm::vec3(0.33f), glm::vec3(0.0f, 1.0f, 0.0f));
+		float frustumX = sqrt(2.0f);
+		float fovy = glm::atan(frustumY);
+		float aspect = frustumX / frustumY;
+		int framebufferY = (shadowBuffer->octSize/2) / aspect;
+		if (framebufferY % 2 == 1) framebufferY++;
+
+		glViewport(0, 0, shadowBuffer->octSize / 2, framebufferY);
 		shadowBuffer->startWrite();
 
 		auto up = glm::vec3(0.0f, 1.0f, 0.0f);
@@ -324,14 +332,13 @@ public:
 
 			auto pos = lights[l].pos;
 
-			auto p = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 256.0f);
+			auto p = glm::perspective(fovy, aspect, 0.1f, 256.0f);
 
 			for (int i = 0; i < 8; ++i) {
 
 				// Need to offset this position as the frustum plane is slightly "higher" than the triangle centroid 
 				// centroid = (.33, .33, .33)
 				// frustum center = (.25, .5, .25)
-				pos.y += octDisplacements[i] * (0.5f - 0.33f);
 
 				glClear(GL_DEPTH_BUFFER_BIT);
 
