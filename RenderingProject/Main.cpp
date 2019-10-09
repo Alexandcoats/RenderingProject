@@ -467,6 +467,7 @@ public:
 				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 				glfwSetCursorPosCallback(window, nullptr);
 				glfwSetKeyCallback(window, nullptr);
+				app->keyboardState[key] = false;
 			}
 			else if (app->keyboardState[GLFW_KEY_G]) {
 				app->walkMode = !app->walkMode;
