@@ -109,7 +109,7 @@ public:
 				glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("p"), 1, GL_FALSE, &camera->projection[0][0]);
 				glUniformMatrix4fv(pipelineBRDF->getAttributeLocation("v"), 1, GL_FALSE, &camera->view[0][0]);
 
-				glUniform1i(pipelineBRDF->getAttributeLocation("num_lights"), lights.size());
+				glUniform1i(pipelineBRDF->getAttributeLocation("numLights"), lights.size());
 
 				for (int i = 0; i < lights.size(); ++i) {
 					glUniform3fv(pipelineBRDF->getAttributeLocation("lights[" + std::to_string(i) + "].pos"), 1, &lights[i].pos[0]);
@@ -294,16 +294,35 @@ public:
 	}
 
 	void initShadowMap() {
+		glCullFace(GL_FRONT);
 		shadowBuffer = new ShadowBuffer(lights.size());
 
 		pipelineShadows->use();
 
-		//shadowBuffer->startWrite();
+		shadowBuffer->startWrite();
 
-		auto p = glm::perspective(glm::radians(90.0f), 0.5f, 0.1f, 256.0f);
+		glUniform1i(pipelineShadows->getAttributeLocation("octSize"), shadowBuffer->octSize);
+
+		float frustumY = 2.0f * glm::distance(glm::vec3(0.33f), glm::vec3(0.0f, 1.0f, 0.0f));
+		float frustumX = sqrt(2.0f);
+		float fovy = 2.0f * glm::asin(frustumY/2.0f);
+		float aspect = frustumX / frustumY;
+		//float d = glm::degrees(fovy);
+		//float h = 0.5f * frustumX * tan(glm::radians(60.0f));
+
+		auto p = glm::perspective(fovy, aspect, 0.01f, 256.0f);
 		glUniformMatrix4fv(pipelineShadows->getAttributeLocation("p"), 1, GL_FALSE, &p[0][0]);
 
 		auto up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+		glm::vec3 dirVectors[8] = { {-1.0f, 1.0f, 1.0f}, // quad 1, forward oct
+									{-1.0f, 1.0f, -1.0f}, // quad 1, rear oct
+									{1.0f, 1.0f, 1.0f}, // quad 2, forward oct
+									{1.0f, 1.0f, -1.0f}, // quad 2, rear oct
+									{1.0f, -1.0f, 1.0f}, // quad 3 forward oct
+									{1.0f, -1.0f, -1.0f}, // quad 3, rear oct
+									{-1.0f, -1.0f, 1.0f}, // quad 4, forward oct
+									{-1.0f, -1.0f, -1.0f} }; // quad 4, rear oct
 		
 		for (int l = 0; l < lights.size(); ++l) {
 
@@ -314,40 +333,30 @@ public:
 
 			glUniform3fv(pipelineShadows->getAttributeLocation("lightPos"), 1, &pos[0]);
 
-			glm::vec3 dirVectors[8] = { {1.0f, 1.0f, 0.0f},
-										{0.0f, 1.0f, 1.0f},
-										{-1.0f, 1.0f, 0.0f},
-										{0.0f, 1.0f, -1.0f},
-										{1.0f, -1.0f, 0.0f},
-										{0.0f, -1.0f, 1.0f},
-										{-1.0f, -1.0f, 0.0f},
-										{0.0f, -1.0f, -1.0f} };
-
 			for (int i = 0; i < 8; ++i) {
+
+				glUniform1i(pipelineShadows->getAttributeLocation("octant"), i);
 
 				glClear(GL_DEPTH_BUFFER_BIT);
 
 				auto dir = glm::normalize(dirVectors[i]);
-				
+
 				auto v = glm::lookAt(pos, pos + dir, up);
-				
+
 				glUniformMatrix4fv(pipelineShadows->getAttributeLocation("v"), 1, GL_FALSE, &v[0][0]);
 
 				for (const auto & tile : tiles) {
 					tile.draw(pipelineShadows);
-					//glMemoryBarrier(GL_ALL_BARRIER_BITS);
 				}
 			}
 
-			//glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			//auto pixels = new float[shadowBuffer->octSize * shadowBuffer->octSize];
+			//glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, shadowBuffer->octSize, shadowBuffer->octSize, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * shadowBuffer->octSize * shadowBuffer->octSize, pixels);
 
-			auto pixels = new float[512*512];
-			glGetTextureSubImage(shadowBuffer->octmapTex, 0, 0, 0, l, 512, 512, 1, GL_RGBA, GL_UNSIGNED_BYTE, sizeof(float) * 512 * 512, pixels);
-
-			stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), 512, 512, 4, pixels, sizeof(float) * 512);
+			//stbi_write_png(("shadowMap" + std::to_string(l) + ".png").c_str(), shadowBuffer->octSize, shadowBuffer->octSize, 4, pixels, sizeof(float) * shadowBuffer->octSize);
 		}
-
-		//shadowBuffer->endWrite();
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glCullFace(GL_BACK);
 	}
 
 	void initInput() {

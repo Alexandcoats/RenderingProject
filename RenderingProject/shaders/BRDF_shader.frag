@@ -172,33 +172,38 @@ vec2 signNotZero(in vec2 v) {
     return vec2( signNotZero(v.x), signNotZero(v.y) );
 }
 
-vec3 octDecode(float x, float y) {
-    vec3 v = vec3(x, y, 1.0 - abs(x) - abs(y));
-    if (v.z < 0) {
-        v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
-    }
-    return normalize(v);
-}
-
 vec2 octEncode(in vec3 v) {
     float l1norm = abs(v.x) + abs(v.y) + abs(v.z);
     vec2 result = v.xy * (1.0/l1norm);
     if (v.z < 0.0) {
         result = (1.0 - abs(result.yx)) * signNotZero(result.xy);
     }
+	result.y *= -1.0;
     return result;
 }
 
-float getShadow(vec3 pos) {
+const vec3 sampleOffsetDirections[20] = vec3[]
+(
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+   vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+   vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+   vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+); 
+
+float getShadow(vec3 worldSpacePos, vec3 lightDir, int lightIndex) {
 	float shadow = 0.0;
-	for(int i = 0; i < numLights; ++i){
-		vec3 fragToLight = pos - lights[i].pos;
-		float closestDepth = texture(shadowMap, vec3(octEncode(fragToLight), i)).r;
-		float currentDepth = length(fragToLight);
-		shadow = currentDepth > closestDepth ? 1.0 : 0.0;
-		if(shadow) return shadow;
+	float bias = 0.05;
+	int samples = 20;
+	float currentDepth = length(lightDir);
+	float diskRadius = 0.01; //(1.0 + length(camPos - worldSpacePos)) / 50.0;
+	for(int i = 0; i < samples; ++i) {
+		vec2 depthCoord = vec2(((octEncode(lightDir + sampleOffsetDirections[i] * diskRadius) + 1.0) / 2.0));
+		float closestDepth = texture(shadowMap, vec3(depthCoord, lightIndex)).r;
+		if(currentDepth - bias > closestDepth) shadow += 1.0;
 	}
-	return shadow;
+	
+	return 1.0 - (shadow / float(samples));
 }
 
 void main() {
@@ -220,14 +225,14 @@ void main() {
 
 	vec3 viewDir = normalize(camPos - worldSpacePos);
 
-	for(int i = 0; i < numLights; ++i) {
+	for(int i = 0; i < numLights && i < maxLights; ++i) {
 		float falloff = sqr(lights[i].pos.x - worldSpacePos.x) + sqr(lights[i].pos.y - worldSpacePos.y) + sqr(lights[i].pos.z - worldSpacePos.z);
 		if(falloff > lights[i].brightness) continue;
 		vec3 lightDir = normalize(lights[i].pos - worldSpacePos);
 		vec3 b = max(BRDF(lightDir, viewDir, normal, worldSpaceTangent, worldSpaceBitangent), vec3(0.0));
 		b *= dot(lightDir, normal);
 		b *= (1.0 / falloff);
-		b *= lights[i].color * lights[i].brightness * getShadow(worldSpacePos);
+		b *= lights[i].color * lights[i].brightness * getShadow(worldSpacePos, worldSpacePos - lights[i].pos, i);
 		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 1.0);
 	}
 }

@@ -112,7 +112,7 @@ public:
 	}
 
 	void startWrite() {
-		//glViewport(0, 0, octSize, octSize);
+		glViewport(0, 0, octSize, octSize);
 		//glBindFramebuffer(GL_FRAMEBUFFER, ID);
 	}
 };
