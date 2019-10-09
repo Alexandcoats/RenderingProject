@@ -225,6 +225,8 @@ void main() {
 
 	vec3 viewDir = normalize(camPos - worldSpacePos);
 
+	outColor = vec4(0.0,0.0,0.0,1.0);
+
 	for(int i = 0; i < numLights && i < maxLights; ++i) {
 		float falloff = sqr(lights[i].pos.x - worldSpacePos.x) + sqr(lights[i].pos.y - worldSpacePos.y) + sqr(lights[i].pos.z - worldSpacePos.z);
 		if(falloff > lights[i].brightness) continue;
@@ -233,6 +235,6 @@ void main() {
 		b *= dot(lightDir, normal);
 		b *= (1.0 / falloff);
 		b *= lights[i].color * lights[i].brightness * getShadow(worldSpacePos, worldSpacePos - lights[i].pos, i);
-		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 1.0);
+		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 0.0);
 	}
 }

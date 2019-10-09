@@ -1,6 +1,8 @@
 #version 450
 
-layout(early_fragment_tests) in;
+//layout(early_fragment_tests) in;
+
+uniform sampler2D texSampler;
 
 uniform vec3 lightPos;
 uniform int octant;
@@ -9,6 +11,7 @@ uniform int octSize;
 layout (r32f) writeonly uniform image2D shadowMap;
 
 in vec3 worldSpacePos;
+in vec2 UV;
 
 float signNotZero(in float k) {
     return k >= 0.0 ? 1.0 : -1.0;
@@ -29,6 +32,9 @@ vec2 octEncode(in vec3 v) {
 }
 
 void main() {
+	float depth = length(worldSpacePos - lightPos);
+	if(depth / float(octSize) < gl_FragCoord.z / gl_FragCoord.w && texture(texSampler, UV).a < 1.0) return;
+
 	vec3 lightDir = normalize(worldSpacePos - lightPos);
 	if		(octant == 0 && (lightDir.x > 0.0 || lightDir.z < 0.0 || lightDir.y < 0.0)) return;
 	else if (octant == 1 && (lightDir.x > 0.0 || lightDir.z > 0.0 || lightDir.y < 0.0)) return;
@@ -40,6 +46,6 @@ void main() {
 	else if (octant == 7 && (lightDir.x > 0.0 || lightDir.z > 0.0 || lightDir.y > 0.0)) return;
 
 	ivec2 depthCoord = ivec2(octSize * ((octEncode(lightDir) + 1.0) / 2.0));
-	float depth = length(worldSpacePos - lightPos);
+	
 	imageStore(shadowMap, depthCoord, vec4(depth));
 }

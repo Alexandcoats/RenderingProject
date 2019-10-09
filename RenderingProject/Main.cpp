@@ -52,6 +52,8 @@ public:
 
 	void mainLoop() {
 		float speed_modifier = 1.0f;
+		glEnable(GL_BLEND);
+		//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		while (!glfwWindowShouldClose(window)) {
 			auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -299,6 +301,7 @@ public:
 	}
 
 	void initShadowMap() {
+		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_FRONT);
 		shadowBuffer = new ShadowBuffer(lights.size());
 
@@ -362,6 +365,7 @@ public:
 		}
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glCullFace(GL_BACK);
+		glEnable(GL_DEPTH_TEST);
 	}
 
 	void initInput() {
