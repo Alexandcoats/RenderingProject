@@ -196,7 +196,7 @@ float getShadow(vec3 worldSpacePos, vec3 lightDir, int lightIndex) {
 	float bias = 0.05;
 	int samples = 20;
 	float currentDepth = length(lightDir);
-	float diskRadius = 0.01; //(1.0 + length(camPos - worldSpacePos)) / 50.0;
+	float diskRadius = (length(camPos - worldSpacePos)) / 500.0;
 	for(int i = 0; i < samples; ++i) {
 		vec2 depthCoord = vec2(((octEncode(lightDir + sampleOffsetDirections[i] * diskRadius) + 1.0) / 2.0));
 		float closestDepth = texture(shadowMap, vec3(depthCoord, lightIndex)).r;
@@ -237,4 +237,6 @@ void main() {
 		b *= lights[i].color * lights[i].brightness * getShadow(worldSpacePos, worldSpacePos - lights[i].pos, i);
 		outColor += vec4(clamp(b, vec3(0.0), vec3(1.0)), 0.0);
 	}
+
+	outColor += vec4(0.3 * baseColor, 0.0);
 }

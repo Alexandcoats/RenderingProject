@@ -85,7 +85,7 @@ public:
 class ShadowBuffer : public FrameBuffer {
 public:
 	unsigned int octmapTex;
-	const int octSize = 512;
+	const int octSize = 650;
 
 	ShadowBuffer(unsigned int numLights) {
 		//glGenFramebuffers(1, &ID);

@@ -279,6 +279,8 @@ public:
 	void initTiles() {
 		readOBJ("./models/tileset.obj", "./models", "./models/metadata.json", tiles);
 
+		//lights.push_back({glm::vec3(0.0f, 20.0f, 0.0f), glm::vec3(5.0f, 5.0f, 1.0f), 10000.0f});
+
 		for (int i = 0; i < map.map.size(); ++i) {
 			for (int j = 0; j < map.map[0].size(); ++j) {
 				if (map.map[i][j]->pieceInd) {
@@ -289,6 +291,7 @@ public:
 					tiles[map.map[i][j]->pieceInd - 1].instances.push_back(m);
 					for (auto light : tiles[map.map[i][j]->pieceInd - 1].lights) {
 						light.pos = glm::vec3(m * glm::vec4(light.pos, 1.0f));
+						light.brightness *= 10.0f;
 						lights.push_back(light);
 					}
 				}
@@ -301,7 +304,6 @@ public:
 	}
 
 	void initShadowMap() {
-		glDisable(GL_DEPTH_TEST);
 		glCullFace(GL_FRONT);
 		shadowBuffer = new ShadowBuffer(lights.size());
 
@@ -365,7 +367,6 @@ public:
 		}
 		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		glCullFace(GL_BACK);
-		glEnable(GL_DEPTH_TEST);
 	}
 
 	void initInput() {
